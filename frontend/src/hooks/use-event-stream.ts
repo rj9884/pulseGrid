@@ -7,6 +7,19 @@ import { getAccessToken } from "@/lib/api";
 
 const SSE_URL = process.env.NEXT_PUBLIC_SSE_URL || "http://localhost:8080/api/v1/stream/events";
 
+interface CheckItemRecord {
+  id: number;
+  monitor_id: string;
+  status_code?: number | null;
+  latency_ms: number;
+  dns_ms: number;
+  tls_ms: number;
+  ttfb_ms: number;
+  is_up: boolean;
+  error_message?: string | null;
+  checked_at: string;
+}
+
 export function useEventStream() {
   const queryClient = useQueryClient();
   const [isConnected, setIsConnected] = useState(false);
@@ -49,7 +62,7 @@ export function useEventStream() {
         });
 
         // 2. Prepend to monitor checks cache if loaded
-        queryClient.setQueryData<any[]>(["monitor-checks", parsed.monitor_id], (old) => {
+        queryClient.setQueryData<CheckItemRecord[]>(["monitor-checks", parsed.monitor_id], (old) => {
           if (!old) return old;
           return [
             {

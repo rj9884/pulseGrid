@@ -9,7 +9,7 @@ import { Monitor, MonitorFormData } from "@/lib/schemas";
 import { Navbar } from "@/components/ui/navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
@@ -50,7 +50,7 @@ export default function DashboardPage() {
       setIsModalOpen(false);
       reset();
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       setModalError(err.message || "Failed to create monitor");
     },
   });

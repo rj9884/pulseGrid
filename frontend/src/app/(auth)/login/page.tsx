@@ -32,8 +32,9 @@ export default function LoginPage() {
       });
       setAccessToken(res.tokens.access_token);
       router.push("/");
-    } catch (err: any) {
-      setServerError(err.message || "Failed to log in");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to log in";
+      setServerError(msg);
     }
   };
 
@@ -84,7 +85,7 @@ export default function LoginPage() {
             </Button>
 
             <div className="text-center text-xs text-zinc-400 pt-2">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/register" className="text-blue-400 hover:underline">
                 Create one
               </Link>

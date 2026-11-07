@@ -1,10 +1,10 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
-class ApiError extends Error {
+export class ApiError extends Error {
   status: number;
-  data: any;
+  data?: unknown;
 
-  constructor(status: number, message: string, data?: any) {
+  constructor(status: number, message: string, data?: unknown) {
     super(message);
     this.status = status;
     this.data = data;
@@ -74,7 +74,7 @@ export async function apiRequest<T>(
       } else {
         setAccessToken(null);
         if (typeof window !== "undefined" && !window.location.pathname.startsWith("/status")) {
-          window.location.href = "/login";
+          window.location.replace("/login");
         }
       }
     } catch {
@@ -83,13 +83,17 @@ export async function apiRequest<T>(
   }
 
   if (!res.ok) {
-    let errData: any;
+    let errData: Record<string, unknown> = {};
     try {
-      errData = await res.json();
+      errData = (await res.json()) as Record<string, unknown>;
     } catch {
       errData = { detail: res.statusText };
     }
-    throw new ApiError(res.status, errData.detail || errData.message || "Request failed", errData);
+    const message =
+      (typeof errData.detail === "string" && errData.detail) ||
+      (typeof errData.message === "string" && errData.message) ||
+      "Request failed";
+    throw new ApiError(res.status, message, errData);
   }
 
   if (res.status === 204) {

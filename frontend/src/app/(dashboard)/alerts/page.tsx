@@ -38,7 +38,7 @@ export default function AlertsPage() {
       setIsModalOpen(false);
       reset();
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       setModalError(err.message || "Failed to add alert channel");
     },
   });

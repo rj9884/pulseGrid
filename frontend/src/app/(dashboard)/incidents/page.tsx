@@ -16,7 +16,6 @@ export default function IncidentsPage() {
   });
 
   const openIncidents = incidents.filter((i) => i.status === "OPEN");
-  const resolvedIncidents = incidents.filter((i) => i.status === "RESOLVED");
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">

@@ -37,8 +37,9 @@ export default function RegisterPage() {
       });
       setAccessToken(res.tokens.access_token);
       router.push("/");
-    } catch (err: any) {
-      setServerError(err.message || "Failed to create account");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to create account";
+      setServerError(msg);
     }
   };
 
