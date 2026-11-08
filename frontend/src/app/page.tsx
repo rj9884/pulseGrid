@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pause, Play, Trash2, ArrowUpRight, Activity, AlertCircle, CheckCircle2, Globe } from "lucide-react";
@@ -17,8 +17,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MonitorSchema } from "@/lib/schemas";
 
+const emptySubscribe = () => () => {};
+
 export default function DashboardPage() {
   const queryClient = useQueryClient();
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
@@ -27,6 +34,8 @@ export default function DashboardPage() {
     queryFn: () => apiRequest<Monitor[]>("/monitors"),
     enabled: typeof window !== "undefined" && !!getAccessToken(),
   });
+
+  const showLoading = !mounted || isLoading;
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<MonitorFormData>({
     resolver: zodResolver(MonitorSchema),
@@ -119,7 +128,9 @@ export default function DashboardPage() {
               <Activity className="h-4 w-4 text-brand-hover opacity-80" />
             </div>
             <div className="mt-2 flex items-baseline">
-              <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{totalMonitors}</span>
+              <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                {showLoading ? "—" : totalMonitors}
+              </span>
             </div>
           </Card>
 
@@ -129,8 +140,12 @@ export default function DashboardPage() {
               <CheckCircle2 className="h-4 w-4 text-emerald-400 opacity-80" />
             </div>
             <div className="mt-2 flex items-baseline space-x-1.5">
-              <span className="text-2xl sm:text-3xl font-bold text-emerald-400 tracking-tight">{upMonitors}</span>
-              <span className="text-xs text-text-muted">/ {totalMonitors}</span>
+              <span className="text-2xl sm:text-3xl font-bold text-emerald-400 tracking-tight">
+                {showLoading ? "—" : upMonitors}
+              </span>
+              <span className="text-xs text-text-muted">
+                {showLoading ? "" : `/ ${totalMonitors}`}
+              </span>
             </div>
           </Card>
 
@@ -140,8 +155,8 @@ export default function DashboardPage() {
               <AlertCircle className="h-4 w-4 text-red-400 opacity-80" />
             </div>
             <div className="mt-2 flex items-baseline">
-              <span className={`text-2xl sm:text-3xl font-bold tracking-tight ${downMonitors > 0 ? "text-red-400" : "text-text-muted"}`}>
-                {downMonitors}
+              <span className={`text-2xl sm:text-3xl font-bold tracking-tight ${!showLoading && downMonitors > 0 ? "text-red-400" : "text-text-muted"}`}>
+                {showLoading ? "—" : downMonitors}
               </span>
             </div>
           </Card>
@@ -152,10 +167,18 @@ export default function DashboardPage() {
               <Globe className="h-4 w-4 text-text-accent opacity-80" />
             </div>
             <div className="mt-2 flex items-baseline space-x-2">
-              <span className="text-2xl sm:text-3xl font-bold text-white font-mono tracking-tight">{avgUptime}%</span>
-              <span className="text-[11px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                Operational
+              <span className="text-2xl sm:text-3xl font-bold text-white font-mono tracking-tight">
+                {showLoading ? "—" : avgUptime === "—" ? "100.00%" : `${avgUptime}%`}
               </span>
+              {!showLoading && (
+                <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded border ${
+                  downMonitors > 0
+                    ? "text-red-400 bg-red-500/10 border-red-500/20"
+                    : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                }`}>
+                  {downMonitors > 0 ? "Degraded" : "Operational"}
+                </span>
+              )}
             </div>
           </Card>
         </div>
@@ -164,14 +187,14 @@ export default function DashboardPage() {
         <div className="space-y-3.5">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-              Registered Endpoints ({monitors.length})
+              Registered Endpoints {showLoading ? "" : `(${monitors.length})`}
             </h2>
             <span className="text-[11px] text-text-muted font-mono">
               Auto-refreshed via SSE
             </span>
           </div>
 
-          {isLoading ? (
+          {showLoading ? (
             <div className="rounded-2xl border border-border-default/60 bg-surface-base p-12 text-center text-xs sm:text-sm text-text-muted">
               Loading monitor telemetry stream...
             </div>
