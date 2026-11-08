@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Zap } from "lucide-react";
 import { LoginSchema, type LoginFormData } from "@/lib/schemas";
 import { apiRequest, setAccessToken } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -39,25 +40,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-zinc-950">
-      <Card className="w-full max-w-md border-zinc-800 bg-zinc-900/90 shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-canvas">
+      <Card className="w-full max-w-md border-border-default/80 bg-surface-base shadow-2xl">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-bold text-white text-sm">
-            PG
+          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)]">
+            <Zap className="h-5 w-5 fill-white" />
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-          <CardDescription>Log in to access your PulseGrid dashboard</CardDescription>
+          <CardTitle className="text-2xl font-bold tracking-tight text-white">Welcome to PulseGrid</CardTitle>
+          <CardDescription>Log in to access your real-time telemetry dashboard</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {serverError && (
-              <div className="rounded-md bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-400">
+              <div className="rounded-lg bg-red-500/10 border border-red-500/30 p-3 text-xs text-red-400">
                 {serverError}
               </div>
             )}
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300">Email</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-text-secondary">Email address</label>
               <Input
                 type="email"
                 placeholder="developer@pulsegrid.dev"
@@ -68,8 +69,8 @@ export default function LoginPage() {
               )}
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300">Password</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-text-secondary">Password</label>
               <Input
                 type="password"
                 placeholder="••••••••"
@@ -81,12 +82,12 @@ export default function LoginPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Authenticating..." : "Sign In"}
+              {isSubmitting ? "Authenticating..." : "Sign In to Dashboard"}
             </Button>
 
-            <div className="text-center text-xs text-zinc-400 pt-2">
+            <div className="text-center text-xs text-text-muted pt-2">
               Don&apos;t have an account?{" "}
-              <Link href="/register" className="text-blue-400 hover:underline">
+              <Link href="/register" className="text-text-accent hover:underline font-medium">
                 Create one
               </Link>
             </div>
