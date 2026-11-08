@@ -8,6 +8,10 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./vitest.setup.ts",
+    execArgv: [
+      "--import",
+      path.resolve(import.meta.dirname, "./vitest.preload.mjs"),
+    ],
   },
   resolve: {
     alias: {
