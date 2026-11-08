@@ -122,7 +122,7 @@ pulseGrid/
 ### Prerequisites
 
 - [Go](https://go.dev/) (1.22+)
-- [Node.js](https://nodejs.org/) (20+) & `npm`
+- [Node.js](https://nodejs.org/) (22+) & `npm`
 - [Docker](https://www.docker.com/) & Docker Compose
 
 ### 1. Start Infrastructure Services
