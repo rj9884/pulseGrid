@@ -310,21 +310,35 @@ export function UptimeBar({
                   </span>
                 </div>
 
-                <div className="p-2 rounded-lg bg-surface-card border border-border-subtle/60">
+                <div
+                  className="p-2 rounded-lg bg-surface-card border border-border-subtle/60"
+                  title="DNS: Domain name resolution time • TLS: SSL/TLS handshake negotiation time"
+                >
                   <span className="text-[10px] uppercase font-semibold text-text-muted tracking-wider block">
                     DNS / TLS Handshake
                   </span>
                   <span className="font-mono font-semibold text-xs text-text-secondary mt-0.5 block">
-                    {(selectedSlot.check.dns_ms ?? 0)}ms / {(selectedSlot.check.tls_ms ?? 0)}ms
+                    {selectedSlot.check.dns_ms !== undefined && selectedSlot.check.dns_ms !== null
+                      ? `${selectedSlot.check.dns_ms === 0 ? "<1" : selectedSlot.check.dns_ms}ms`
+                      : "—"}
+                    {" / "}
+                    {selectedSlot.check.tls_ms !== undefined && selectedSlot.check.tls_ms !== null
+                      ? `${selectedSlot.check.tls_ms === 0 ? "<1" : selectedSlot.check.tls_ms}ms`
+                      : "—"}
                   </span>
                 </div>
 
-                <div className="p-2 rounded-lg bg-surface-card border border-border-subtle/60">
+                <div
+                  className="p-2 rounded-lg bg-surface-card border border-border-subtle/60"
+                  title="Time To First Byte: Server processing time until response headers/first byte arrive"
+                >
                   <span className="text-[10px] uppercase font-semibold text-text-muted tracking-wider block">
                     TTFB (First Byte)
                   </span>
                   <span className="font-mono font-semibold text-xs text-text-secondary mt-0.5 block">
-                    {(selectedSlot.check.ttfb_ms ?? 0)} ms
+                    {selectedSlot.check.ttfb_ms !== undefined && selectedSlot.check.ttfb_ms !== null
+                      ? `${selectedSlot.check.ttfb_ms === 0 ? "<1" : selectedSlot.check.ttfb_ms} ms`
+                      : "—"}
                   </span>
                 </div>
               </div>
