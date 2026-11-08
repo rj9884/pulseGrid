@@ -29,6 +29,15 @@ func TestEvaluateState(t *testing.T) {
 			expectedStatusChange: true,
 		},
 		{
+			name:                 "pending monitor fails -> becomes DOWN immediately",
+			currentStatus:        domain.StatusPending,
+			currentFailures:      0,
+			isUp:                 false,
+			expectedStatus:       domain.StatusDown,
+			expectedFailures:     1,
+			expectedStatusChange: true,
+		},
+		{
 			name:                 "UP monitor succeeds -> remains UP",
 			currentStatus:        domain.StatusUp,
 			currentFailures:      0,

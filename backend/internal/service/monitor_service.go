@@ -89,8 +89,8 @@ func (s *MonitorService) Create(ctx context.Context, userID uuid.UUID, input dom
 	return monitor, nil
 }
 
-func (s *MonitorService) Get(ctx context.Context, id uuid.UUID, userID uuid.UUID) (*domain.Monitor, []domain.LatencyBucket, error) {
-	monitor, err := s.monitorRepo.GetByID(ctx, id)
+func (s *MonitorService) Get(ctx context.Context, id uuid.UUID, userID uuid.UUID) (*domain.MonitorWithStats, []domain.LatencyBucket, error) {
+	monitor, err := s.monitorRepo.GetByIDWithStats(ctx, id)
 	if err != nil {
 		return nil, nil, err
 	}

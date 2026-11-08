@@ -206,16 +206,19 @@ func (p *WorkerPool) processJob(job domain.MonitorJob) {
 func EvaluateState(currentStatus domain.MonitorStatus, currentFailures int, isUp bool, threshold int) (domain.MonitorStatus, int, bool) {
 	if isUp {
 		newFailures := 0
-		if currentStatus == domain.StatusDown {
-			return domain.StatusUp, newFailures, true
-		}
-		if currentStatus == domain.StatusPending {
+		if currentStatus == domain.StatusDown || currentStatus == domain.StatusPending {
 			return domain.StatusUp, newFailures, true
 		}
 		return domain.StatusUp, newFailures, false
 	}
 
 	newFailures := currentFailures + 1
+
+	// If the monitor was in PENDING state and probe failed, immediately transition to DOWN
+	if currentStatus == domain.StatusPending {
+		return domain.StatusDown, newFailures, true
+	}
+
 	if newFailures >= threshold {
 		if currentStatus != domain.StatusDown {
 			return domain.StatusDown, newFailures, true
@@ -223,6 +226,6 @@ func EvaluateState(currentStatus domain.MonitorStatus, currentFailures int, isUp
 		return domain.StatusDown, newFailures, false
 	}
 
-	// Consecutive failures < threshold (anti-flapping buffer)
+	// Consecutive failures < threshold (anti-flapping buffer for active UP monitors)
 	return currentStatus, newFailures, false
 }

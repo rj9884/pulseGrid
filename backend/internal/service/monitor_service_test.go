@@ -29,6 +29,14 @@ func (m *MockMonitorRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Mo
 	return args.Get(0).(*domain.Monitor), args.Error(1)
 }
 
+func (m *MockMonitorRepo) GetByIDWithStats(ctx context.Context, id uuid.UUID) (*domain.MonitorWithStats, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domain.MonitorWithStats), args.Error(1)
+}
+
 func (m *MockMonitorRepo) ListByUserID(ctx context.Context, userID uuid.UUID) ([]domain.MonitorWithStats, error) {
 	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
@@ -152,10 +160,12 @@ func TestMonitorService_GetForbidden(t *testing.T) {
 	cRepo := new(MockCheckResultRepo)
 	svc := NewMonitorService(mRepo, cRepo, true)
 
-	mRepo.On("GetByID", ctx, monitorID).Return(&domain.Monitor{
-		ID:     monitorID,
-		UserID: ownerID,
-		Name:   "Private Monitor",
+	mRepo.On("GetByIDWithStats", ctx, monitorID).Return(&domain.MonitorWithStats{
+		Monitor: domain.Monitor{
+			ID:     monitorID,
+			UserID: ownerID,
+			Name:   "Private Monitor",
+		},
 	}, nil)
 
 	mon, metrics, err := svc.Get(ctx, monitorID, otherUserID)

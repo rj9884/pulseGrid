@@ -17,6 +17,7 @@ type UserRepository interface {
 type MonitorRepository interface {
 	Create(ctx context.Context, monitor *domain.Monitor) error
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Monitor, error)
+	GetByIDWithStats(ctx context.Context, id uuid.UUID) (*domain.MonitorWithStats, error)
 	ListByUserID(ctx context.Context, userID uuid.UUID) ([]domain.MonitorWithStats, error)
 	FetchDueMonitors(ctx context.Context, limit int) ([]domain.MonitorJob, error)
 	Update(ctx context.Context, monitor *domain.Monitor) error

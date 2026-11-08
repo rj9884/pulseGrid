@@ -54,11 +54,22 @@ type MonitorUpdateInput struct {
 	IsActive        *bool              `json:"is_active,omitempty"`
 }
 
+type CheckResultSummary struct {
+	ID           int64     `json:"id"`
+	StatusCode   *int      `json:"status_code"`
+	LatencyMS    int       `json:"latency_ms"`
+	IsUp         bool      `json:"is_up"`
+	ErrorMessage *string   `json:"error_message,omitempty"`
+	CheckedAt    time.Time `json:"checked_at"`
+}
+
 type MonitorWithStats struct {
 	Monitor
-	Uptime24h      float64 `json:"uptime_24h"`
-	AvgLatency24h  int     `json:"avg_latency_24h"`
-	LatestCheck    *CheckResult `json:"latest_check,omitempty"`
+	Uptime24h      *float64             `json:"uptime_24h"`
+	AvgLatency24h  int                  `json:"avg_latency_24h"`
+	TotalChecks    int64                `json:"total_checks"`
+	RecentChecks   []CheckResultSummary `json:"recent_checks"`
+	LatestCheck    *CheckResult         `json:"latest_check,omitempty"`
 }
 
 type LatencyBucket struct {

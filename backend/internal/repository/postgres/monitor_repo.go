@@ -88,12 +88,30 @@ func (r *MonitorRepo) ListByUserID(ctx context.Context, userID uuid.UUID) ([]dom
 			m.id, m.user_id, m.name, m.url, m.method, m.headers, m.expected_status,
 			m.interval_seconds, m.timeout_ms, m.status, m.consecutive_failures,
 			m.is_active, m.last_checked_at, m.created_at, m.updated_at,
-			COALESCE(stats.uptime_24h, 100.0) AS uptime_24h,
-			COALESCE(stats.avg_latency_24h, 0) AS avg_latency_24h
+			stats.uptime_24h,
+			COALESCE(stats.avg_latency_24h, 0) AS avg_latency_24h,
+			COALESCE(stats.total_checks, 0) AS total_checks,
+			COALESCE(
+				(
+					SELECT json_agg(r)
+					FROM (
+						SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+						FROM (
+							SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+							FROM check_results
+							WHERE monitor_id = m.id
+							ORDER BY checked_at DESC
+							LIMIT 40
+						) sub
+						ORDER BY checked_at ASC
+					) r
+				), '[]'::json
+			) AS recent_checks
 		FROM monitors m
 		LEFT JOIN (
 			SELECT 
 				monitor_id,
+				COUNT(*) AS total_checks,
 				ROUND(100.0 * SUM(CASE WHEN is_up THEN 1 ELSE 0 END)::numeric / COUNT(*), 2) AS uptime_24h,
 				ROUND(AVG(latency_ms)) AS avg_latency_24h
 			FROM check_results
@@ -114,12 +132,14 @@ func (r *MonitorRepo) ListByUserID(ctx context.Context, userID uuid.UUID) ([]dom
 	for rows.Next() {
 		var item domain.MonitorWithStats
 		var headersBytes []byte
+		var recentChecksBytes []byte
 
 		err := rows.Scan(
 			&item.ID, &item.UserID, &item.Name, &item.URL, &item.Method, &headersBytes,
 			&item.ExpectedStatus, &item.IntervalSeconds, &item.TimeoutMS, &item.Status,
 			&item.ConsecutiveFailures, &item.IsActive, &item.LastCheckedAt, &item.CreatedAt,
-			&item.UpdatedAt, &item.Uptime24h, &item.AvgLatency24h,
+			&item.UpdatedAt, &item.Uptime24h, &item.AvgLatency24h, &item.TotalChecks,
+			&recentChecksBytes,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("scan monitor: %w", err)
@@ -132,6 +152,13 @@ func (r *MonitorRepo) ListByUserID(ctx context.Context, userID uuid.UUID) ([]dom
 			item.Headers = make(map[string]string)
 		}
 
+		if len(recentChecksBytes) > 0 {
+			_ = json.Unmarshal(recentChecksBytes, &item.RecentChecks)
+		}
+		if item.RecentChecks == nil {
+			item.RecentChecks = []domain.CheckResultSummary{}
+		}
+
 		result = append(result, item)
 	}
 
@@ -140,6 +167,80 @@ func (r *MonitorRepo) ListByUserID(ctx context.Context, userID uuid.UUID) ([]dom
 	}
 
 	return result, nil
+}
+
+func (r *MonitorRepo) GetByIDWithStats(ctx context.Context, id uuid.UUID) (*domain.MonitorWithStats, error) {
+	query := `
+		SELECT 
+			m.id, m.user_id, m.name, m.url, m.method, m.headers, m.expected_status,
+			m.interval_seconds, m.timeout_ms, m.status, m.consecutive_failures,
+			m.is_active, m.last_checked_at, m.created_at, m.updated_at,
+			stats.uptime_24h,
+			COALESCE(stats.avg_latency_24h, 0) AS avg_latency_24h,
+			COALESCE(stats.total_checks, 0) AS total_checks,
+			COALESCE(
+				(
+					SELECT json_agg(r)
+					FROM (
+						SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+						FROM (
+							SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+							FROM check_results
+							WHERE monitor_id = m.id
+							ORDER BY checked_at DESC
+							LIMIT 48
+						) sub
+						ORDER BY checked_at ASC
+					) r
+				), '[]'::json
+			) AS recent_checks
+		FROM monitors m
+		LEFT JOIN (
+			SELECT 
+				monitor_id,
+				COUNT(*) AS total_checks,
+				ROUND(100.0 * SUM(CASE WHEN is_up THEN 1 ELSE 0 END)::numeric / COUNT(*), 2) AS uptime_24h,
+				ROUND(AVG(latency_ms)) AS avg_latency_24h
+			FROM check_results
+			WHERE checked_at >= NOW() - INTERVAL '24 hours'
+			GROUP BY monitor_id
+		) stats ON stats.monitor_id = m.id
+		WHERE m.id = $1
+	`
+
+	var item domain.MonitorWithStats
+	var headersBytes []byte
+	var recentChecksBytes []byte
+
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&item.ID, &item.UserID, &item.Name, &item.URL, &item.Method, &headersBytes,
+		&item.ExpectedStatus, &item.IntervalSeconds, &item.TimeoutMS, &item.Status,
+		&item.ConsecutiveFailures, &item.IsActive, &item.LastCheckedAt, &item.CreatedAt,
+		&item.UpdatedAt, &item.Uptime24h, &item.AvgLatency24h, &item.TotalChecks,
+		&recentChecksBytes,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrNotFound
+		}
+		return nil, fmt.Errorf("get monitor with stats: %w", err)
+	}
+
+	if len(headersBytes) > 0 {
+		_ = json.Unmarshal(headersBytes, &item.Headers)
+	}
+	if item.Headers == nil {
+		item.Headers = make(map[string]string)
+	}
+
+	if len(recentChecksBytes) > 0 {
+		_ = json.Unmarshal(recentChecksBytes, &item.RecentChecks)
+	}
+	if item.RecentChecks == nil {
+		item.RecentChecks = []domain.CheckResultSummary{}
+	}
+
+	return &item, nil
 }
 
 func (r *MonitorRepo) FetchDueMonitors(ctx context.Context, limit int) ([]domain.MonitorJob, error) {
@@ -291,12 +392,30 @@ func (r *MonitorRepo) GetPublicSummary(ctx context.Context) ([]domain.MonitorWit
 			m.id, m.user_id, m.name, m.url, m.method, m.headers, m.expected_status,
 			m.interval_seconds, m.timeout_ms, m.status, m.consecutive_failures,
 			m.is_active, m.last_checked_at, m.created_at, m.updated_at,
-			COALESCE(stats.uptime_24h, 100.0) AS uptime_24h,
-			COALESCE(stats.avg_latency_24h, 0) AS avg_latency_24h
+			stats.uptime_24h,
+			COALESCE(stats.avg_latency_24h, 0) AS avg_latency_24h,
+			COALESCE(stats.total_checks, 0) AS total_checks,
+			COALESCE(
+				(
+					SELECT json_agg(r)
+					FROM (
+						SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+						FROM (
+							SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+							FROM check_results
+							WHERE monitor_id = m.id
+							ORDER BY checked_at DESC
+							LIMIT 40
+						) sub
+						ORDER BY checked_at ASC
+					) r
+				), '[]'::json
+			) AS recent_checks
 		FROM monitors m
 		LEFT JOIN (
 			SELECT 
 				monitor_id,
+				COUNT(*) AS total_checks,
 				ROUND(100.0 * SUM(CASE WHEN is_up THEN 1 ELSE 0 END)::numeric / COUNT(*), 2) AS uptime_24h,
 				ROUND(AVG(latency_ms)) AS avg_latency_24h
 			FROM check_results
@@ -317,15 +436,31 @@ func (r *MonitorRepo) GetPublicSummary(ctx context.Context) ([]domain.MonitorWit
 	for rows.Next() {
 		var item domain.MonitorWithStats
 		var headersBytes []byte
+		var recentChecksBytes []byte
 
 		err := rows.Scan(
 			&item.ID, &item.UserID, &item.Name, &item.URL, &item.Method, &headersBytes,
 			&item.ExpectedStatus, &item.IntervalSeconds, &item.TimeoutMS, &item.Status,
 			&item.ConsecutiveFailures, &item.IsActive, &item.LastCheckedAt, &item.CreatedAt,
-			&item.UpdatedAt, &item.Uptime24h, &item.AvgLatency24h,
+			&item.UpdatedAt, &item.Uptime24h, &item.AvgLatency24h, &item.TotalChecks,
+			&recentChecksBytes,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("scan public monitor: %w", err)
+		}
+
+		if len(headersBytes) > 0 {
+			_ = json.Unmarshal(headersBytes, &item.Headers)
+		}
+		if item.Headers == nil {
+			item.Headers = make(map[string]string)
+		}
+
+		if len(recentChecksBytes) > 0 {
+			_ = json.Unmarshal(recentChecksBytes, &item.RecentChecks)
+		}
+		if item.RecentChecks == nil {
+			item.RecentChecks = []domain.CheckResultSummary{}
 		}
 
 		result = append(result, item)
