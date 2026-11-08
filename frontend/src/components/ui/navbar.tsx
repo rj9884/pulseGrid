@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, AlertTriangle, Bell, LogOut, Radio } from "lucide-react";
+import { Activity, AlertTriangle, Bell, LogOut, Radio, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { setAccessToken } from "@/lib/api";
 import { useEventStream } from "@/hooks/use-event-stream";
@@ -25,16 +25,22 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
-      <div className="container mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-        <div className="flex items-center space-x-6">
-          <Link href="/" className="flex items-center space-x-2 font-bold text-lg text-white">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white font-extrabold text-xs">
-              PG
+    <header className="sticky top-0 z-40 w-full border-b border-border-subtle bg-surface-base/80 backdrop-blur-md">
+      <div className="container mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
+        <div className="flex items-center space-x-6 sm:space-x-8">
+          <Link href="/" className="flex items-center space-x-2.5 group">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-transform duration-200 group-hover:scale-105">
+              <Zap className="h-4 w-4 fill-white" />
             </span>
-            <span>PulseGrid</span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="font-bold text-base text-white tracking-tight">PulseGrid</span>
+              <span className="hidden sm:inline-block text-[10px] font-mono uppercase tracking-wider text-text-accent px-1.5 py-0.2 rounded bg-brand-primary/10 border border-brand-primary/25">
+                v1.0
+              </span>
+            </div>
           </Link>
-          <nav className="flex items-center space-x-1 sm:space-x-4">
+
+          <nav className="flex items-center space-x-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
@@ -43,13 +49,13 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "flex items-center space-x-1.5 rounded-md px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors",
+                    "flex items-center space-x-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-150",
                     isActive
-                      ? "bg-zinc-800 text-white"
-                      : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                      ? "bg-surface-card text-white border border-border-default/80 shadow-xs"
+                      : "text-text-muted hover:bg-surface-card/60 hover:text-white"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className={cn("h-4 w-4", isActive ? "text-brand-hover" : "text-text-muted")} />
                   <span>{link.label}</span>
                 </Link>
               );
@@ -57,25 +63,27 @@ export function Navbar() {
           </nav>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1.5 text-xs">
-            <span
-              className={cn(
-                "h-2 w-2 rounded-full",
-                isConnected ? "bg-emerald-500 animate-pulse" : "bg-zinc-600"
-              )}
-            />
-            <span className="text-zinc-400 hidden sm:inline">
-              {isConnected ? "Live Sync" : "Connecting..."}
+        <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="flex items-center space-x-2 rounded-full border border-border-subtle bg-surface-card/40 px-2.5 py-1 text-xs">
+            {isConnected ? (
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+            ) : (
+              <span className="h-2 w-2 rounded-full bg-zinc-600" />
+            )}
+            <span className="text-[11px] font-medium text-text-muted hidden sm:inline">
+              {isConnected ? "Live Pulse" : "Connecting..."}
             </span>
           </div>
 
           <button
             onClick={handleLogout}
-            className="flex items-center space-x-1 text-xs text-zinc-400 hover:text-red-400 transition-colors cursor-pointer"
-            title="Log out"
+            className="flex items-center space-x-1.5 rounded-lg border border-border-subtle bg-surface-card/30 px-2.5 py-1 text-xs font-medium text-text-muted hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
+            title="Log out of session"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
