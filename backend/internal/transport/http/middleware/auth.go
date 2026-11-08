@@ -11,11 +11,11 @@ import (
 	"github.com/pulsegrid/backend/pkg/auth"
 )
 
-type contextKey string
+type contextKey = handlers.ContextKey
 
 const (
-	UserIDContextKey contextKey = "user_id"
-	RoleContextKey   contextKey = "role"
+	UserIDContextKey = handlers.UserIDContextKey
+	RoleContextKey   = handlers.RoleContextKey
 )
 
 func Auth(jwtManager *auth.JWTManager) func(http.Handler) http.Handler {
@@ -39,9 +39,7 @@ func Auth(jwtManager *auth.JWTManager) func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), UserIDContextKey, claims.UserID)
-			ctx = context.WithValue(ctx, RoleContextKey, claims.Role)
-
+			ctx := handlers.WithUserContext(r.Context(), claims.UserID, claims.Role)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -50,7 +48,7 @@ func Auth(jwtManager *auth.JWTManager) func(http.Handler) http.Handler {
 func RequireRole(requiredRole string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			role, ok := r.Context().Value(RoleContextKey).(string)
+			role, ok := handlers.GetRole(r.Context())
 			if !ok || role != requiredRole {
 				handlers.RespondError(w, domain.NewForbiddenError("insufficient permissions for this action"))
 				return
@@ -61,13 +59,9 @@ func RequireRole(requiredRole string) func(http.Handler) http.Handler {
 }
 
 func GetUserID(ctx context.Context) (uuid.UUID, bool) {
-	val := ctx.Value(UserIDContextKey)
-	id, ok := val.(uuid.UUID)
-	return id, ok
+	return handlers.GetUserID(ctx)
 }
 
 func GetRole(ctx context.Context) (string, bool) {
-	val := ctx.Value(RoleContextKey)
-	role, ok := val.(string)
-	return role, ok
+	return handlers.GetRole(ctx)
 }

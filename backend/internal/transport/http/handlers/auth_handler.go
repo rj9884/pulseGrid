@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pulsegrid/backend/internal/domain"
 	"github.com/pulsegrid/backend/internal/service"
 )
@@ -102,8 +101,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
-	userIDVal := r.Context().Value("user_id")
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
 		return

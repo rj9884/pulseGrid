@@ -20,7 +20,7 @@ func NewMonitorHandler(monitorService *service.MonitorService) *MonitorHandler {
 }
 
 func (h *MonitorHandler) List(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
 		return
@@ -40,7 +40,7 @@ func (h *MonitorHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MonitorHandler) Create(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
 		return
@@ -62,7 +62,7 @@ func (h *MonitorHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MonitorHandler) Get(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
 		return
@@ -92,7 +92,7 @@ func (h *MonitorHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MonitorHandler) Update(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
 		return
@@ -121,7 +121,7 @@ func (h *MonitorHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MonitorHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
 		return
@@ -143,7 +143,7 @@ func (h *MonitorHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MonitorHandler) ListChecks(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
 		return

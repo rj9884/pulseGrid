@@ -20,9 +20,8 @@ func NewIncidentHandler(incidentService *service.IncidentService) *IncidentHandl
 }
 
 func (h *IncidentHandler) ListIncidents(w http.ResponseWriter, r *http.Request) {
-	userIDVal := r.Context().Value("user_id")
 	var userFilter *uuid.UUID
-	if id, ok := userIDVal.(uuid.UUID); ok {
+	if id, ok := GetUserID(r.Context()); ok {
 		userFilter = &id
 	}
 
@@ -43,7 +42,7 @@ func (h *IncidentHandler) ListIncidents(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *IncidentHandler) ListAlertChannels(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
 		return
@@ -63,7 +62,7 @@ func (h *IncidentHandler) ListAlertChannels(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *IncidentHandler) CreateAlertChannel(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
 		return
@@ -85,7 +84,7 @@ func (h *IncidentHandler) CreateAlertChannel(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *IncidentHandler) DeleteAlertChannel(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
 		return
