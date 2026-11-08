@@ -185,13 +185,36 @@ export default function DashboardPage() {
 
         {/* Registered Endpoints Section */}
         <div className="space-y-3.5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-              Registered Endpoints {showLoading ? "" : `(${monitors.length})`}
-            </h2>
-            <span className="text-[11px] text-text-muted font-mono">
-              Auto-refreshed via SSE
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                Registered Endpoints {showLoading ? "" : `(${monitors.length})`}
+              </h2>
+              <span className="text-[11px] text-text-muted font-mono">
+                Auto-refreshed via SSE
+              </span>
+            </div>
+
+            {/* Visual Color Status Legend */}
+            <div className="flex flex-wrap items-center gap-3 text-[11px] bg-surface-card/60 px-3 py-1.5 rounded-lg border border-border-subtle/50">
+              <span className="text-[10px] uppercase font-semibold text-text-muted mr-0.5">Legend:</span>
+              <span className="inline-flex items-center gap-1.5 text-text-secondary" title="Responding normally with latency under 1000ms">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
+                Operational (&lt;1s)
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-text-secondary" title="Responding slow with latency 1000ms or higher">
+                <span className="h-2 w-2 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></span>
+                Degraded (≥1s)
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-text-secondary" title="Check failed, unexpected HTTP status code, or network outage">
+                <span className="h-2 w-2 rounded-full bg-red-500 shadow-sm shadow-red-500/50"></span>
+                Outage / Down
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-text-secondary" title="No check recorded in that historical time slot">
+                <span className="h-2 w-2 rounded-full bg-surface-elevated border border-border-default"></span>
+                No Data
+              </span>
+            </div>
           </div>
 
           {showLoading ? (

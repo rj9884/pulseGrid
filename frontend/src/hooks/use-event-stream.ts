@@ -54,6 +54,9 @@ export function useEventStream() {
               const newCheck = {
                 status_code: parsed.status_code,
                 latency_ms: parsed.latency_ms,
+                dns_ms: parsed.dns_ms,
+                tls_ms: parsed.tls_ms,
+                ttfb_ms: parsed.ttfb_ms,
                 is_up: parsed.is_up,
                 error_message: parsed.error_message,
                 checked_at: parsed.checked_at,

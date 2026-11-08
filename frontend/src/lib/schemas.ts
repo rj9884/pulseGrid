@@ -54,6 +54,9 @@ export interface CheckResultSummary {
   id?: number;
   status_code?: number | null;
   latency_ms: number;
+  dns_ms?: number;
+  tls_ms?: number;
+  ttfb_ms?: number;
   is_up: boolean;
   error_message?: string | null;
   checked_at: string;
