@@ -95,9 +95,9 @@ func (r *MonitorRepo) ListByUserID(ctx context.Context, userID uuid.UUID) ([]dom
 				(
 					SELECT json_agg(r)
 					FROM (
-						SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+						SELECT id, status_code, latency_ms, dns_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
 						FROM (
-							SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+							SELECT id, status_code, latency_ms, dns_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
 							FROM check_results
 							WHERE monitor_id = m.id
 							ORDER BY checked_at DESC
@@ -182,9 +182,9 @@ func (r *MonitorRepo) GetByIDWithStats(ctx context.Context, id uuid.UUID) (*doma
 				(
 					SELECT json_agg(r)
 					FROM (
-						SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+						SELECT id, status_code, latency_ms, dns_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
 						FROM (
-							SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+							SELECT id, status_code, latency_ms, dns_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
 							FROM check_results
 							WHERE monitor_id = m.id
 							ORDER BY checked_at DESC
@@ -399,9 +399,9 @@ func (r *MonitorRepo) GetPublicSummary(ctx context.Context) ([]domain.MonitorWit
 				(
 					SELECT json_agg(r)
 					FROM (
-						SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+						SELECT id, status_code, latency_ms, dns_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
 						FROM (
-							SELECT id, status_code, latency_ms, is_up, error_message, checked_at
+							SELECT id, status_code, latency_ms, dns_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
 							FROM check_results
 							WHERE monitor_id = m.id
 							ORDER BY checked_at DESC
