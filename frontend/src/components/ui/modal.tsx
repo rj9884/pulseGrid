@@ -14,15 +14,16 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl text-zinc-100 animate-in fade-in zoom-in-95 duration-150">
-        <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
-          <h2 className="text-lg font-semibold">{title}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-lg rounded-2xl border border-border-default bg-surface-base p-6 shadow-2xl text-text-secondary animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
+          <h2 className="text-base font-semibold text-white tracking-tight">{title}</h2>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            className="rounded-md p-1 text-text-muted hover:text-white hover:bg-surface-card transition-colors cursor-pointer"
+            aria-label="Close modal"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
         <div className="mt-4">{children}</div>
