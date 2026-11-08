@@ -50,6 +50,15 @@ export const CheckEventSchema = z.object({
 
 export type CheckEvent = z.infer<typeof CheckEventSchema>;
 
+export interface CheckResultSummary {
+  id?: number;
+  status_code?: number | null;
+  latency_ms: number;
+  is_up: boolean;
+  error_message?: string | null;
+  checked_at: string;
+}
+
 export interface Monitor {
   id: string;
   user_id: string;
@@ -66,8 +75,10 @@ export interface Monitor {
   last_checked_at: string | null;
   created_at: string;
   updated_at: string;
-  uptime_24h?: number;
+  uptime_24h?: number | null;
   avg_latency_24h?: number;
+  total_checks?: number;
+  recent_checks?: CheckResultSummary[];
 }
 
 export interface LatencyBucket {

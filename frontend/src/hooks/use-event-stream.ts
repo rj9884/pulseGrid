@@ -51,10 +51,26 @@ export function useEventStream() {
           if (!old) return old;
           return old.map((m) => {
             if (m.id === parsed.monitor_id) {
+              const newCheck = {
+                status_code: parsed.status_code,
+                latency_ms: parsed.latency_ms,
+                is_up: parsed.is_up,
+                error_message: parsed.error_message,
+                checked_at: parsed.checked_at,
+              };
+              const updatedRecentChecks = [...(m.recent_checks || []), newCheck].slice(-40);
+              const totalChecks = (m.total_checks || 0) + 1;
+              const upCount = updatedRecentChecks.filter((c) => c.is_up).length;
+              const calculatedUptime = Number(((upCount / updatedRecentChecks.length) * 100).toFixed(2));
+
               return {
                 ...m,
                 status: parsed.status,
                 last_checked_at: parsed.checked_at,
+                uptime_24h: calculatedUptime,
+                total_checks: totalChecks,
+                recent_checks: updatedRecentChecks,
+                avg_latency_24h: parsed.latency_ms,
               };
             }
             return m;

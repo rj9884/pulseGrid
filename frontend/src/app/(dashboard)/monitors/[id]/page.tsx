@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { LatencyChart } from "@/components/charts/latency-chart";
 import { UptimeBar } from "@/components/ui/uptime-bar";
+import { cn } from "@/lib/utils";
 
 interface CheckItem {
   id: number;
@@ -105,13 +106,25 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ id: st
           <Card className="p-4 sm:p-5">
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-border-subtle/50">
               <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-                30-Day Availability & Uptime History
+                Recent Availability & Execution History
               </span>
-              <span className="text-xs font-mono font-bold text-emerald-400">
-                {monitor.uptime_24h ?? 100}% Operational
+              <span className={cn(
+                "text-xs font-mono font-bold",
+                (monitor.total_checks ?? 0) === 0 && "text-text-muted",
+                (monitor.total_checks ?? 0) > 0 && monitor.status === "UP" && "text-emerald-400",
+                (monitor.total_checks ?? 0) > 0 && monitor.status === "DOWN" && "text-red-400"
+              )}>
+                {(monitor.total_checks ?? 0) > 0 && monitor.uptime_24h !== null && monitor.uptime_24h !== undefined
+                  ? `${monitor.uptime_24h}% Operational`
+                  : "Awaiting initial probe"}
               </span>
             </div>
-            <UptimeBar uptime={monitor.uptime_24h ?? 100} barCount={48} />
+            <UptimeBar
+              checks={monitor.recent_checks}
+              uptime={monitor.uptime_24h}
+              totalChecks={monitor.total_checks}
+              barCount={48}
+            />
           </Card>
         </div>
 

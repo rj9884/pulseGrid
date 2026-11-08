@@ -80,9 +80,12 @@ export default function DashboardPage() {
   const totalMonitors = monitors.length;
   const upMonitors = monitors.filter((m) => m.status === "UP").length;
   const downMonitors = monitors.filter((m) => m.status === "DOWN").length;
-  const avgUptime = totalMonitors > 0
-    ? (monitors.reduce((acc, m) => acc + (m.uptime_24h ?? 100), 0) / totalMonitors).toFixed(2)
-    : "100.00";
+  const monitorsWithData = monitors.filter(
+    (m) => (m.total_checks ?? 0) > 0 && m.uptime_24h !== null && m.uptime_24h !== undefined
+  );
+  const avgUptime = monitorsWithData.length > 0
+    ? (monitorsWithData.reduce((acc, m) => acc + (m.uptime_24h ?? 0), 0) / monitorsWithData.length).toFixed(2)
+    : "—";
 
   return (
     <div className="min-h-screen bg-canvas text-text-secondary flex flex-col">
@@ -238,13 +241,15 @@ export default function DashboardPage() {
                         <div className="text-right">
                           <div className="text-[11px] text-text-muted uppercase tracking-wider font-medium">24h Uptime</div>
                           <div className="text-sm font-bold text-white font-mono mt-0.5">
-                            {mon.uptime_24h ?? 100}%
+                            {(mon.total_checks ?? 0) > 0 && mon.uptime_24h !== null && mon.uptime_24h !== undefined
+                              ? `${mon.uptime_24h}%`
+                              : "—"}
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="text-[11px] text-text-muted uppercase tracking-wider font-medium">Avg Latency</div>
                           <div className="text-sm font-bold text-text-secondary font-mono mt-0.5">
-                            {mon.avg_latency_24h ?? 0}ms
+                            {(mon.total_checks ?? 0) > 0 ? `${mon.avg_latency_24h ?? 0}ms` : "—"}
                           </div>
                         </div>
 
@@ -273,7 +278,12 @@ export default function DashboardPage() {
 
                     {/* Bottom Row: Better Stack Uptime Bar Segments */}
                     <div className="pt-2 border-t border-border-subtle/60">
-                      <UptimeBar uptime={mon.uptime_24h ?? 100} barCount={40} />
+                      <UptimeBar
+                        checks={mon.recent_checks}
+                        uptime={mon.uptime_24h}
+                        totalChecks={mon.total_checks}
+                        barCount={40}
+                      />
                     </div>
                   </div>
                 </Card>

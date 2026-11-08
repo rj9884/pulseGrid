@@ -142,7 +142,12 @@ export default async function PublicStatusPage({
 
                   {/* Uptime tick bars */}
                   <div className="pt-1">
-                    <UptimeBar uptime={mon.uptime_24h ?? 100} barCount={36} />
+                    <UptimeBar
+                      checks={mon.recent_checks}
+                      uptime={mon.uptime_24h}
+                      totalChecks={mon.total_checks}
+                      barCount={36}
+                    />
                   </div>
                 </div>
               ))
