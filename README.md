@@ -43,6 +43,36 @@ PulseGrid follows a decoupled, event-driven Clean / Hexagonal Architecture in Go
 
 ---
 
+## Quickstart
+
+Get PulseGrid up and running locally in under 2 minutes:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/rj9884/pulseGrid.git
+cd pulseGrid
+
+# 2. Start PostgreSQL 16 & Redis 7 containers
+make docker-up
+
+# 3. Execute database schema migrations
+make migrate-up
+
+# 4. Launch backend API engine (Terminal 1)
+make run-backend
+
+# 5. Launch frontend Next.js interface (Terminal 2)
+make run-frontend
+```
+
+Once running, access the services:
+- **Web Dashboard:** [http://localhost:3000](http://localhost:3000)
+- **Backend API:** [http://localhost:8080](http://localhost:8080)
+- **Health Check:** [http://localhost:8080/healthz](http://localhost:8080/healthz)
+- **Prometheus Metrics:** [http://localhost:8080/metrics](http://localhost:8080/metrics)
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -58,7 +88,7 @@ PulseGrid follows a decoupled, event-driven Clean / Hexagonal Architecture in Go
 ## Directory Layout
 
 ```text
-pulsegrid/
+pulseGrid/
 ├── backend/
 │   ├── cmd/
 │   │   ├── api/          # Application entrypoint & graceful shutdown
