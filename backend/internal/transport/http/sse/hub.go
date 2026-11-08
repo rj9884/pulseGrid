@@ -32,6 +32,11 @@ func NewHub(publisher repository.EventPublisher, jwtManager *auth.JWTManager, lo
 func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
+		if u, okWrap := w.(interface{ Unwrap() http.ResponseWriter }); okWrap {
+			flusher, ok = u.Unwrap().(http.Flusher)
+		}
+	}
+	if !ok {
 		handlers.RespondError(w, domain.NewInternalError(fmt.Errorf("streaming unsupported")))
 		return
 	}
@@ -102,7 +107,5 @@ func (h *Hub) BroadcastCheckResult(ctx context.Context, event domain.CheckEventP
 }
 
 func GetUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
-	val := ctx.Value("user_id")
-	id, ok := val.(uuid.UUID)
-	return id, ok
+	return handlers.GetUserID(ctx)
 }
