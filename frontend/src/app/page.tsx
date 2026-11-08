@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pause, Play, Trash2, ArrowUpRight, Activity, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Pause, Play, Trash2, ArrowUpRight, Activity, AlertCircle, CheckCircle2, Globe } from "lucide-react";
 import { apiRequest, getAccessToken } from "@/lib/api";
 import { Monitor, MonitorFormData } from "@/lib/schemas";
 import { Navbar } from "@/components/ui/navbar";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
+import { UptimeBar } from "@/components/ui/uptime-bar";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MonitorSchema } from "@/lib/schemas";
@@ -84,138 +85,195 @@ export default function DashboardPage() {
     : "100.00";
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
+    <div className="min-h-screen bg-canvas text-text-secondary flex flex-col">
       <Navbar />
 
-      <main className="container mx-auto max-w-7xl px-4 py-8 flex-1 space-y-6">
+      <main className="container mx-auto max-w-7xl px-4 sm:px-6 py-8 flex-1 space-y-7">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">API Probing Engine</h1>
-            <p className="text-xs sm:text-sm text-zinc-400">
-              Real-time distributed health checks & telemetry streaming
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              Telemetry & Uptime Monitor
+            </h1>
+            <p className="text-xs sm:text-sm text-text-muted mt-1">
+              Distributed prober engine with millisecond-precision health checks & incident streaming
             </p>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} className="flex items-center space-x-1.5 self-start sm:self-auto">
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center space-x-2 self-start sm:self-auto cursor-pointer"
+          >
             <Plus className="h-4 w-4" />
-            <span>New Monitor</span>
+            <span>Create Monitor</span>
           </Button>
         </div>
 
-        {/* Overview Stats */}
+        {/* Overview Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="p-4">
-            <p className="text-xs text-zinc-400">Monitors</p>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-2xl font-bold">{totalMonitors}</span>
-              <Activity className="h-4 w-4 text-blue-500" />
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-text-muted">Total Monitors</span>
+              <Activity className="h-4 w-4 text-brand-hover opacity-80" />
+            </div>
+            <div className="mt-2 flex items-baseline">
+              <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{totalMonitors}</span>
             </div>
           </Card>
-          <Card className="p-4">
-            <p className="text-xs text-zinc-400">Operational</p>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-2xl font-bold text-emerald-400">{upMonitors}</span>
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-text-muted">Operational</span>
+              <CheckCircle2 className="h-4 w-4 text-emerald-400 opacity-80" />
+            </div>
+            <div className="mt-2 flex items-baseline space-x-1.5">
+              <span className="text-2xl sm:text-3xl font-bold text-emerald-400 tracking-tight">{upMonitors}</span>
+              <span className="text-xs text-text-muted">/ {totalMonitors}</span>
             </div>
           </Card>
-          <Card className="p-4">
-            <p className="text-xs text-zinc-400">Down / Outage</p>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-2xl font-bold text-red-400">{downMonitors}</span>
-              <AlertCircle className="h-4 w-4 text-red-500" />
+
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-text-muted">Active Outages</span>
+              <AlertCircle className="h-4 w-4 text-red-400 opacity-80" />
+            </div>
+            <div className="mt-2 flex items-baseline">
+              <span className={`text-2xl sm:text-3xl font-bold tracking-tight ${downMonitors > 0 ? "text-red-400" : "text-text-muted"}`}>
+                {downMonitors}
+              </span>
             </div>
           </Card>
-          <Card className="p-4">
-            <p className="text-xs text-zinc-400">24h Uptime Avg</p>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-2xl font-bold">{avgUptime}%</span>
-              <span className="text-xs text-emerald-400">Normal</span>
+
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-text-muted">24h Availability</span>
+              <Globe className="h-4 w-4 text-text-accent opacity-80" />
+            </div>
+            <div className="mt-2 flex items-baseline space-x-2">
+              <span className="text-2xl sm:text-3xl font-bold text-white font-mono tracking-tight">{avgUptime}%</span>
+              <span className="text-[11px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                Operational
+              </span>
             </div>
           </Card>
         </div>
 
-        {/* Monitors Grid */}
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">Registered Endpoints</h2>
+        {/* Registered Endpoints Section */}
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+              Registered Endpoints ({monitors.length})
+            </h2>
+            <span className="text-[11px] text-text-muted font-mono">
+              Auto-refreshed via SSE
+            </span>
+          </div>
 
           {isLoading ? (
-            <div className="p-12 text-center text-sm text-zinc-500">Loading monitor telemetry...</div>
+            <div className="rounded-2xl border border-border-default/60 bg-surface-base p-12 text-center text-xs sm:text-sm text-text-muted">
+              Loading monitor telemetry stream...
+            </div>
           ) : monitors.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-800 p-12 text-center">
-              <p className="text-sm text-zinc-400">No monitors configured yet.</p>
+            <div className="rounded-2xl border border-dashed border-border-default/70 bg-surface-base/50 p-12 text-center">
+              <Activity className="mx-auto h-8 w-8 text-text-muted/60 mb-2" />
+              <p className="text-sm font-medium text-text-secondary">No endpoints configured yet.</p>
+              <p className="text-xs text-text-muted mt-1">Start probing your APIs, microservices, and databases in real time.</p>
               <Button onClick={() => setIsModalOpen(true)} variant="outline" className="mt-4">
-                Add your first endpoint
+                Register first endpoint
               </Button>
             </div>
           ) : (
-            <div className="grid gap-3">
+            <div className="grid gap-3.5">
               {monitors.map((mon) => (
-                <Card key={mon.id} className="p-4 transition-colors hover:border-zinc-700">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <Link
-                          href={`/monitors/${mon.id}`}
-                          className="font-semibold text-zinc-100 hover:text-blue-400 transition-colors flex items-center space-x-1"
-                        >
-                          <span>{mon.name}</span>
-                          <ArrowUpRight className="h-3.5 w-3.5 opacity-60" />
-                        </Link>
-                        <Badge
-                          variant={
-                            mon.status === "UP"
-                              ? "success"
-                              : mon.status === "DOWN"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {mon.status}
-                        </Badge>
+                <Card
+                  key={mon.id}
+                  className="p-5 hover:border-border-hover/70 hover:bg-surface-card/40 transition-all duration-200"
+                >
+                  <div className="flex flex-col space-y-4">
+                    {/* Top Row: Info & Key Metrics */}
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center space-x-2.5">
+                          <Link
+                            href={`/monitors/${mon.id}`}
+                            className="font-semibold text-white hover:text-text-accent transition-colors flex items-center space-x-1.5 text-base"
+                          >
+                            <span>{mon.name}</span>
+                            <ArrowUpRight className="h-4 w-4 opacity-50 group-hover:opacity-100" />
+                          </Link>
+                          <Badge
+                            variant={
+                              mon.status === "UP"
+                                ? "success"
+                                : mon.status === "DOWN"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                          >
+                            <span className="flex items-center space-x-1.5">
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  mon.status === "UP"
+                                    ? "bg-emerald-400"
+                                    : mon.status === "DOWN"
+                                    ? "bg-red-400"
+                                    : "bg-zinc-400"
+                                }`}
+                              />
+                              <span>{mon.status}</span>
+                            </span>
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
+                          <span className="font-mono bg-surface-card border border-border-subtle px-2 py-0.5 rounded text-[11px] font-semibold text-text-primary">
+                            {mon.method}
+                          </span>
+                          <span className="truncate max-w-xs md:max-w-md font-mono text-text-secondary">
+                            {mon.url}
+                          </span>
+                          <span>• every {mon.interval_seconds}s</span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-3 text-xs text-zinc-400">
-                        <span className="font-mono bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] text-zinc-300">
-                          {mon.method}
-                        </span>
-                        <span className="truncate max-w-xs md:max-w-md font-mono">{mon.url}</span>
-                        <span>• every {mon.interval_seconds}s</span>
+
+                      <div className="flex items-center justify-between md:justify-end space-x-6 sm:space-x-8">
+                        <div className="text-right">
+                          <div className="text-[11px] text-text-muted uppercase tracking-wider font-medium">24h Uptime</div>
+                          <div className="text-sm font-bold text-white font-mono mt-0.5">
+                            {mon.uptime_24h ?? 100}%
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[11px] text-text-muted uppercase tracking-wider font-medium">Avg Latency</div>
+                          <div className="text-sm font-bold text-text-secondary font-mono mt-0.5">
+                            {mon.avg_latency_24h ?? 0}ms
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-1 pl-2 border-l border-border-subtle">
+                          <button
+                            onClick={() => togglePauseMutation.mutate({ id: mon.id, isActive: mon.is_active })}
+                            className="p-1.5 rounded-lg hover:bg-surface-card text-text-muted hover:text-white transition-colors cursor-pointer"
+                            title={mon.is_active ? "Pause monitor" : "Resume monitor"}
+                          >
+                            {mon.is_active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Delete monitor "${mon.name}"?`)) {
+                                deleteMutation.mutate(mon.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-red-500/10 text-text-muted hover:text-red-400 transition-colors cursor-pointer"
+                            title="Delete monitor"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between md:justify-end space-x-6">
-                      <div className="text-right">
-                        <div className="text-xs text-zinc-400">24h Uptime</div>
-                        <div className="text-sm font-bold text-zinc-200">
-                          {mon.uptime_24h ?? 100}%
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-zinc-400">Avg Latency</div>
-                        <div className="text-sm font-bold text-zinc-200">
-                          {mon.avg_latency_24h ?? 0}ms
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-1 pl-2">
-                        <button
-                          onClick={() => togglePauseMutation.mutate({ id: mon.id, isActive: mon.is_active })}
-                          className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                          title={mon.is_active ? "Pause" : "Resume"}
-                        >
-                          {mon.is_active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Delete monitor "${mon.name}"?`)) {
-                              deleteMutation.mutate(mon.id);
-                            }
-                          }}
-                          className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                    {/* Bottom Row: Better Stack Uptime Bar Segments */}
+                    <div className="pt-2 border-t border-border-subtle/60">
+                      <UptimeBar uptime={mon.uptime_24h ?? 100} barCount={40} />
                     </div>
                   </div>
                 </Card>
@@ -229,57 +287,57 @@ export default function DashboardPage() {
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Register Endpoint Monitor">
         <form onSubmit={handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
           {modalError && (
-            <div className="rounded-md bg-red-500/10 border border-red-500/20 p-2.5 text-xs text-red-400">
+            <div className="rounded-lg bg-red-500/10 border border-red-500/30 p-3 text-xs text-red-400">
               {modalError}
             </div>
           )}
 
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-300">Monitor Name</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-text-secondary">Monitor Name</label>
             <Input placeholder="e.g. Auth Gateway" {...register("name")} />
             {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            <div className="col-span-1 space-y-1">
-              <label className="text-xs font-medium text-zinc-300">Method</label>
+            <div className="col-span-1 space-y-1.5">
+              <label className="text-xs font-medium text-text-secondary">Method</label>
               <select
                 {...register("method")}
-                className="flex h-9 w-full rounded-md border border-zinc-700 bg-zinc-950 px-2 text-xs text-zinc-100"
+                className="flex h-9 w-full rounded-lg border border-border-default bg-canvas px-2 text-xs text-white focus-visible:outline-none focus-visible:border-brand-primary"
               >
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
                 <option value="HEAD">HEAD</option>
               </select>
             </div>
-            <div className="col-span-3 space-y-1">
-              <label className="text-xs font-medium text-zinc-300">Target URL</label>
+            <div className="col-span-3 space-y-1.5">
+              <label className="text-xs font-medium text-text-secondary">Target URL</label>
               <Input placeholder="https://api.example.com/health" {...register("url")} />
               {errors.url && <p className="text-xs text-red-400">{errors.url.message}</p>}
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300">Status Code</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-text-secondary">Status Code</label>
               <Input type="number" {...register("expected_status", { valueAsNumber: true })} />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300">Interval (sec)</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-text-secondary">Interval (sec)</label>
               <Input type="number" {...register("interval_seconds", { valueAsNumber: true })} />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300">Timeout (ms)</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-text-secondary">Timeout (ms)</label>
               <Input type="number" {...register("timeout_ms", { valueAsNumber: true })} />
             </div>
           </div>
 
-          <div className="flex justify-end space-x-2 pt-2">
+          <div className="flex justify-end space-x-2.5 pt-3 border-t border-border-subtle">
             <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Start Probing"}
+              {isSubmitting ? "Configuring..." : "Start Probing"}
             </Button>
           </div>
         </form>
