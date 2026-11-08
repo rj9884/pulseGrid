@@ -113,7 +113,7 @@ func (r *MonitorRepo) ListByUserID(ctx context.Context, userID uuid.UUID) ([]dom
 				monitor_id,
 				COUNT(*) AS total_checks,
 				ROUND(100.0 * SUM(CASE WHEN is_up THEN 1 ELSE 0 END)::numeric / COUNT(*), 2) AS uptime_24h,
-				ROUND(AVG(latency_ms)) AS avg_latency_24h
+				COALESCE(ROUND(AVG(CASE WHEN is_up THEN latency_ms ELSE NULL END)), ROUND(AVG(latency_ms)), 0) AS avg_latency_24h
 			FROM check_results
 			WHERE checked_at >= NOW() - INTERVAL '24 hours'
 			GROUP BY monitor_id
@@ -200,7 +200,7 @@ func (r *MonitorRepo) GetByIDWithStats(ctx context.Context, id uuid.UUID) (*doma
 				monitor_id,
 				COUNT(*) AS total_checks,
 				ROUND(100.0 * SUM(CASE WHEN is_up THEN 1 ELSE 0 END)::numeric / COUNT(*), 2) AS uptime_24h,
-				ROUND(AVG(latency_ms)) AS avg_latency_24h
+				COALESCE(ROUND(AVG(CASE WHEN is_up THEN latency_ms ELSE NULL END)), ROUND(AVG(latency_ms)), 0) AS avg_latency_24h
 			FROM check_results
 			WHERE checked_at >= NOW() - INTERVAL '24 hours'
 			GROUP BY monitor_id
@@ -417,7 +417,7 @@ func (r *MonitorRepo) GetPublicSummary(ctx context.Context) ([]domain.MonitorWit
 				monitor_id,
 				COUNT(*) AS total_checks,
 				ROUND(100.0 * SUM(CASE WHEN is_up THEN 1 ELSE 0 END)::numeric / COUNT(*), 2) AS uptime_24h,
-				ROUND(AVG(latency_ms)) AS avg_latency_24h
+				COALESCE(ROUND(AVG(CASE WHEN is_up THEN latency_ms ELSE NULL END)), ROUND(AVG(latency_ms)), 0) AS avg_latency_24h
 			FROM check_results
 			WHERE checked_at >= NOW() - INTERVAL '24 hours'
 			GROUP BY monitor_id
