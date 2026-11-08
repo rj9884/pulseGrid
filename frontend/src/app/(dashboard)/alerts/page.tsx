@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Bell, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Bell, CheckCircle2, Shield } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest } from "@/lib/api";
 import { AlertChannel, AlertChannelFormData, AlertChannelSchema } from "@/lib/schemas";
 import { Navbar } from "@/components/ui/navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 
@@ -54,18 +54,18 @@ export default function AlertsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
+    <div className="min-h-screen bg-canvas text-text-secondary flex flex-col">
       <Navbar />
 
-      <main className="container mx-auto max-w-7xl px-4 py-8 flex-1 space-y-6">
+      <main className="container mx-auto max-w-7xl px-4 sm:px-6 py-8 flex-1 space-y-7">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Notification Channels</h1>
-            <p className="text-xs sm:text-sm text-zinc-400">
-              Configure Webhook destinations for real-time Slack, Discord, and custom incident alerts
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Alert Routing & Integrations</h1>
+            <p className="text-xs sm:text-sm text-text-muted mt-1">
+              Configure Webhook endpoints for automated incident dispatch to Slack, Discord, and on-call paging
             </p>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} className="flex items-center space-x-1.5 self-start sm:self-auto">
+          <Button onClick={() => setIsModalOpen(true)} className="flex items-center space-x-2 self-start sm:self-auto cursor-pointer">
             <Plus className="h-4 w-4" />
             <span>Add Webhook</span>
           </Button>
@@ -73,42 +73,53 @@ export default function AlertsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Active Alert Channels</CardTitle>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base sm:text-lg">Configured Notification Destinations</CardTitle>
+                <CardDescription>
+                  Webhooks are fired immediately upon state transitions between UP, DEGRADED, and DOWN
+                </CardDescription>
+              </div>
+              <Shield className="h-5 w-5 text-text-muted opacity-60" />
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="py-12 text-center text-sm text-zinc-500">Loading channels...</div>
+              <div className="py-12 text-center text-xs sm:text-sm text-text-muted">
+                Loading configured alert channels...
+              </div>
             ) : channels.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-zinc-800 p-12 text-center">
-                <Bell className="mx-auto h-8 w-8 text-zinc-500 mb-2" />
-                <p className="text-sm text-zinc-400">No alert channels configured yet.</p>
+              <div className="rounded-2xl border border-dashed border-border-default/70 bg-surface-base/50 p-12 text-center">
+                <Bell className="mx-auto h-8 w-8 text-text-muted/60 mb-2" />
+                <p className="text-sm font-medium text-text-secondary">No notification destinations configured.</p>
+                <p className="text-xs text-text-muted mt-1">Connect your team chat to receive instantaneous incident notifications.</p>
                 <Button onClick={() => setIsModalOpen(true)} variant="outline" className="mt-4">
                   Add Slack or Discord Webhook
                 </Button>
               </div>
             ) : (
-              <div className="grid gap-3">
+              <div className="grid gap-3.5">
                 {channels.map((ch) => (
                   <div
                     key={ch.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-zinc-800 bg-zinc-900/50"
+                    className="flex items-center justify-between p-4 sm:p-5 rounded-xl border border-border-default/70 bg-surface-card/40 hover:border-border-hover/70 transition-all"
                   >
                     <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-zinc-200">{ch.name}</span>
-                        <span className="flex items-center space-x-1 text-xs text-emerald-400">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
+                      <div className="flex items-center space-x-2.5">
+                        <span className="font-semibold text-white text-sm sm:text-base">{ch.name}</span>
+                        <span className="inline-flex items-center space-x-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                          <CheckCircle2 className="h-3 w-3" />
                           <span>Active</span>
                         </span>
                       </div>
-                      <p className="text-xs text-zinc-500 font-mono truncate max-w-xs sm:max-w-md">
+                      <p className="text-xs text-text-muted font-mono truncate max-w-xs sm:max-w-md bg-canvas/60 px-2 py-0.5 rounded border border-border-subtle/50">
                         {ch.webhook_url}
                       </p>
                     </div>
 
                     <button
                       onClick={() => deleteMutation.mutate(ch.id)}
-                      className="p-2 rounded hover:bg-zinc-800 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer"
+                      className="p-2 rounded-lg hover:bg-red-500/10 text-text-muted hover:text-red-400 transition-colors cursor-pointer"
                       title="Remove channel"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -121,33 +132,33 @@ export default function AlertsPage() {
         </Card>
       </main>
 
-      {/* Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Notification Channel">
+      {/* Add Channel Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Notification Webhook">
         <form onSubmit={handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
           {modalError && (
-            <div className="rounded-md bg-red-500/10 border border-red-500/20 p-2.5 text-xs text-red-400">
+            <div className="rounded-lg bg-red-500/10 border border-red-500/30 p-3 text-xs text-red-400">
               {modalError}
             </div>
           )}
 
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-300">Channel Name</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-text-secondary">Channel Name</label>
             <Input placeholder="e.g. #ops-incidents" {...register("name")} />
             {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-300">Webhook URL</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-text-secondary">Webhook Destination URL</label>
             <Input placeholder="https://hooks.slack.com/services/..." {...register("webhook_url")} />
             {errors.webhook_url && <p className="text-xs text-red-400">{errors.webhook_url.message}</p>}
           </div>
 
-          <div className="flex justify-end space-x-2 pt-2">
+          <div className="flex justify-end space-x-2.5 pt-3 border-t border-border-subtle">
             <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Webhook"}
+              {isSubmitting ? "Connecting..." : "Save Webhook"}
             </Button>
           </div>
         </form>
