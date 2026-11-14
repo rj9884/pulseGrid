@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckEventSchema, type CheckEvent, type Monitor } from "@/lib/schemas";
-import { getAccessToken } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
 
 const SSE_URL = process.env.NEXT_PUBLIC_SSE_URL || "http://localhost:8080/api/v1/stream/events";
 
@@ -22,12 +22,12 @@ interface CheckItemRecord {
 
 export function useEventStream() {
   const queryClient = useQueryClient();
+  const { token } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState<CheckEvent | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    const token = getAccessToken();
     if (!token) return;
 
     const url = new URL(SSE_URL);
@@ -117,8 +117,9 @@ export function useEventStream() {
     return () => {
       es.close();
       eventSourceRef.current = null;
+      setIsConnected(false);
     };
-  }, [queryClient]);
+  }, [queryClient, token]);
 
   return { isConnected, lastEvent };
 }

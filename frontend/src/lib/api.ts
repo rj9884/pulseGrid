@@ -21,6 +21,7 @@ export function setAccessToken(token: string | null) {
     } else {
       localStorage.removeItem("pulsegrid_token");
     }
+    window.dispatchEvent(new Event("pulsegrid-auth-change"));
   }
 }
 
@@ -73,8 +74,12 @@ export async function apiRequest<T>(
         });
       } else {
         setAccessToken(null);
-        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/status")) {
-          window.location.replace("/login");
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/status") &&
+          window.location.pathname !== "/"
+        ) {
+          window.location.replace(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
         }
       }
     } catch {
