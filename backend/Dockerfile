@@ -1,30 +1,45 @@
+# Build stage
 FROM golang:1.24-alpine AS builder
 
+# Install build dependencies
+RUN apk add --no-cache git make
+
 WORKDIR /app
 
-RUN apk add --no-cache git ca-certificates tzdata
-
-COPY go.mod go.sum ./
+# Copy go mod files first for better caching
+COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/bin/api ./cmd/api/main.go
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/bin/migrate ./cmd/migrate/main.go
+# Copy source code
+COPY backend/ ./
 
+# Build the binary
+RUN CGO_ENABLED=0 go build -v -o /pulsegrid-api ./cmd/api
+RUN CGO_ENABLED=0 go build -v -o /pulsegrid-migrate ./cmd/migrate
+
+# Final stage
 FROM alpine:3.20
 
-RUN apk add --no-cache ca-certificates tzdata \
-    && addgroup -S pulsegrid \
-    && adduser -S pulsegrid -G pulsegrid
+# Install runtime dependencies (ca-certificates for HTTPS, tzdata for timezones)
+RUN apk add --no-cache ca-certificates tzdata
 
 WORKDIR /app
 
-COPY --from=builder /app/bin/api /app/bin/api
-COPY --from=builder /app/bin/migrate /app/bin/migrate
-COPY --from=builder /app/migrations /app/migrations
+# Copy binaries from builder
+COPY --from=builder /pulsegrid-api /app/pulsegrid-api
+COPY --from=builder /pulsegrid-migrate /app/pulsegrid-migrate
 
+# Copy migrations
+COPY backend/migrations ./migrations
+
+# Create non-root user
+RUN adduser -D -g '' pulsegrid
 USER pulsegrid
 
 EXPOSE 8080
 
-ENTRYPOINT ["/app/bin/api"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1
+
+ENTRYPOINT ["/app/pulsegrid-api"]
