@@ -71,7 +71,7 @@ func TestIncidentService_AlertChannels(t *testing.T) {
 	t.Run("creates alert channel successfully", func(t *testing.T) {
 		incRepo := new(MockIncidentRepo)
 		alertRepo := new(MockAlertChannelRepo)
-		svc := NewIncidentService(incRepo, alertRepo)
+		svc := NewIncidentService(incRepo, alertRepo, true)
 
 		alertRepo.On("Create", ctx, mock.AnythingOfType("*domain.AlertChannel")).Return(nil)
 
@@ -89,7 +89,7 @@ func TestIncidentService_AlertChannels(t *testing.T) {
 	t.Run("rejects invalid webhook url", func(t *testing.T) {
 		incRepo := new(MockIncidentRepo)
 		alertRepo := new(MockAlertChannelRepo)
-		svc := NewIncidentService(incRepo, alertRepo)
+		svc := NewIncidentService(incRepo, alertRepo, false)
 
 		ch, err := svc.CreateAlertChannel(ctx, userID, domain.AlertChannelCreateInput{
 			Name:       "Bad Webhook",
