@@ -48,3 +48,10 @@ func GetRole(ctx context.Context) (string, bool) {
 	}
 	return "", false
 }
+
+// GetUserRole returns the user role from context, or empty string if not found.
+// This is a convenience wrapper for handlers that need role-based checks.
+func GetUserRole(ctx context.Context) string {
+	role, _ := GetRole(ctx)
+	return role
+}

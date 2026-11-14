@@ -12,6 +12,7 @@ type CheckResult struct {
 	StatusCode   *int      `json:"status_code"`
 	LatencyMS    int       `json:"latency_ms"`
 	DNSMS        int       `json:"dns_ms"`
+	ConnectMS    int       `json:"connect_ms"`
 	TLSMS        int       `json:"tls_ms"`
 	TTFBMS       int       `json:"ttfb_ms"`
 	IsUp         bool      `json:"is_up"`
@@ -27,6 +28,7 @@ type CheckEventPayload struct {
 	StatusCode     *int          `json:"status_code"`
 	LatencyMS      int           `json:"latency_ms"`
 	DNSMS          int           `json:"dns_ms"`
+	ConnectMS      int           `json:"connect_ms"`
 	TLSMS          int           `json:"tls_ms"`
 	TTFBMS         int           `json:"ttfb_ms"`
 	IsUp           bool          `json:"is_up"`

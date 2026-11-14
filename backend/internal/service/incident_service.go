@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pulsegrid/backend/internal/domain"
 	"github.com/pulsegrid/backend/internal/repository"
+	"github.com/pulsegrid/backend/pkg/security"
 	"github.com/pulsegrid/backend/pkg/validator"
 )
 
@@ -34,6 +35,13 @@ func (s *IncidentService) ListIncidents(ctx context.Context, userID *uuid.UUID, 
 func (s *IncidentService) CreateAlertChannel(ctx context.Context, userID uuid.UUID, input domain.AlertChannelCreateInput) (*domain.AlertChannel, error) {
 	if valErrs := validator.ValidateAlertChannelInput(input); len(valErrs) > 0 {
 		return nil, domain.NewValidationError("invalid alert channel configuration", valErrs)
+	}
+
+	// SSRF prevention: Validate webhook URL against private/internal networks
+	if _, err := security.ValidateTargetURL(input.WebhookURL, false); err != nil {
+		return nil, domain.NewValidationError("webhook URL is disallowed", map[string]string{
+			"webhook_url": err.Error(),
+		})
 	}
 
 	isEnabled := true

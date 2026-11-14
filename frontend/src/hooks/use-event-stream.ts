@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckEventSchema, type CheckEvent, type Monitor } from "@/lib/schemas";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,6 +13,7 @@ interface CheckItemRecord {
   status_code?: number | null;
   latency_ms: number;
   dns_ms: number;
+  connect_ms: number;
   tls_ms: number;
   ttfb_ms: number;
   is_up: boolean;
@@ -26,8 +27,11 @@ export function useEventStream() {
   const [isConnected, setIsConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState<CheckEvent | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectAttemptRef = useRef(0);
+  const maxReconnectAttempts = 10;
+  const baseReconnectDelay = 1000; // 1 second
 
-  useEffect(() => {
+  const connect = useCallback(() => {
     if (!token) return;
 
     const url = new URL(SSE_URL);
@@ -38,6 +42,7 @@ export function useEventStream() {
 
     es.addEventListener("connected", () => {
       setIsConnected(true);
+      reconnectAttemptRef.current = 0; // Reset on successful connection
     });
 
     es.addEventListener("check_completed", (event: MessageEvent) => {
@@ -55,6 +60,7 @@ export function useEventStream() {
                 status_code: parsed.status_code,
                 latency_ms: parsed.latency_ms,
                 dns_ms: parsed.dns_ms,
+                connect_ms: parsed.connect_ms,
                 tls_ms: parsed.tls_ms,
                 ttfb_ms: parsed.ttfb_ms,
                 is_up: parsed.is_up,
@@ -90,6 +96,7 @@ export function useEventStream() {
               status_code: parsed.status_code,
               latency_ms: parsed.latency_ms,
               dns_ms: parsed.dns_ms,
+              connect_ms: parsed.connect_ms,
               tls_ms: parsed.tls_ms,
               ttfb_ms: parsed.ttfb_ms,
               is_up: parsed.is_up,
@@ -112,14 +119,29 @@ export function useEventStream() {
 
     es.onerror = () => {
       setIsConnected(false);
-    };
-
-    return () => {
-      es.close();
-      eventSourceRef.current = null;
-      setIsConnected(false);
+      // Attempt reconnection with exponential backoff
+      if (reconnectAttemptRef.current < maxReconnectAttempts) {
+        const delay = Math.min(
+          baseReconnectDelay * Math.pow(2, reconnectAttemptRef.current),
+          30000 // Cap at 30 seconds
+        );
+        reconnectAttemptRef.current += 1;
+        setTimeout(connect, delay);
+      }
     };
   }, [queryClient, token]);
+
+  useEffect(() => {
+    connect();
+
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      setIsConnected(false);
+    };
+  }, [connect]);
 
   return { isConnected, lastEvent };
 }

@@ -31,6 +31,7 @@ func NewRouter(cfg RouterConfig) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger(cfg.Logger))
 	r.Use(middleware.Recovery(cfg.Logger))
+	r.Use(middleware.MaxBytes(1 << 20)) // 1MB request body limit
 	r.Use(chimiddleware.RealIP)
 
 	corsMiddleware := cors.New(cors.Options{

@@ -199,6 +199,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ id: st
                       <th className="py-3 px-3.5">HTTP Code</th>
                       <th className="py-3 px-3.5">Total Latency</th>
                       <th className="py-3 px-3.5">DNS</th>
+                      <th className="py-3 px-3.5">Connect</th>
                       <th className="py-3 px-3.5">TLS</th>
                       <th className="py-3 px-3.5">TTFB</th>
                       <th className="py-3 px-3.5">Checked At</th>
@@ -229,6 +230,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ id: st
                           {c.latency_ms}ms
                         </td>
                         <td className="py-2.5 px-3.5 text-text-muted">{c.dns_ms}ms</td>
+                        <td className="py-2.5 px-3.5 text-text-muted">{(c as any).connect_ms ?? 0}ms</td>
                         <td className="py-2.5 px-3.5 text-text-muted">{c.tls_ms}ms</td>
                         <td className="py-2.5 px-3.5 text-text-muted">{c.ttfb_ms}ms</td>
                         <td className="py-2.5 px-3.5 text-text-muted font-sans">

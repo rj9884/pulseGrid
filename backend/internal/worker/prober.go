@@ -17,6 +17,7 @@ type ProbeResult struct {
 	StatusCode   *int
 	LatencyMS    int
 	DNSMS        int
+	ConnectMS    int
 	TLSMS        int
 	TTFBMS       int
 	IsUp         bool
@@ -30,7 +31,9 @@ type Prober struct {
 
 func NewProber(allowPrivateNetworks bool) *Prober {
 	transport := &http.Transport{
-		DisableKeepAlives:   true,
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 10,
+		IdleConnTimeout:     90 * time.Second,
 		TLSHandshakeTimeout: 10 * time.Second,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: false,
@@ -51,6 +54,7 @@ func (p *Prober) Execute(ctx context.Context, job domain.MonitorJob) ProbeResult
 		return ProbeResult{
 			IsUp:         false,
 			ErrorMessage: &errMsg,
+			ConnectMS:    0,
 		}
 	}
 
@@ -63,12 +67,14 @@ func (p *Prober) Execute(ctx context.Context, job domain.MonitorJob) ProbeResult
 	defer cancel()
 
 	var (
-		dnsStart   time.Time
-		dnsDone    time.Time
-		tlsStart   time.Time
-		tlsDone    time.Time
-		wroteReq   time.Time
-		firstByte  time.Time
+		dnsStart    time.Time
+		dnsDone     time.Time
+		connectStart time.Time
+		connectDone  time.Time
+		tlsStart    time.Time
+		tlsDone     time.Time
+		wroteReq    time.Time
+		firstByte   time.Time
 	)
 
 	trace := &httptrace.ClientTrace{
@@ -77,6 +83,12 @@ func (p *Prober) Execute(ctx context.Context, job domain.MonitorJob) ProbeResult
 		},
 		DNSDone: func(_ httptrace.DNSDoneInfo) {
 			dnsDone = time.Now()
+		},
+		ConnectStart: func(_, _ string) {
+			connectStart = time.Now()
+		},
+		ConnectDone: func(_, _ string, _ error) {
+			connectDone = time.Now()
 		},
 		TLSHandshakeStart: func() {
 			tlsStart = time.Now()
@@ -98,6 +110,7 @@ func (p *Prober) Execute(ctx context.Context, job domain.MonitorJob) ProbeResult
 		return ProbeResult{
 			IsUp:         false,
 			ErrorMessage: &errMsg,
+			ConnectMS:    0,
 		}
 	}
 
@@ -118,6 +131,7 @@ func (p *Prober) Execute(ctx context.Context, job domain.MonitorJob) ProbeResult
 			LatencyMS:    int(totalLatency.Milliseconds()),
 			IsUp:         false,
 			ErrorMessage: &errMsg,
+			ConnectMS:    0,
 		}
 	}
 	defer resp.Body.Close()
@@ -126,13 +140,17 @@ func (p *Prober) Execute(ctx context.Context, job domain.MonitorJob) ProbeResult
 	_, _ = io.CopyN(io.Discard, resp.Body, 64*1024)
 
 	var (
-		dnsMS  int
-		tlsMS  int
-		ttfbMS int
+		dnsMS     int
+		connectMS int
+		tlsMS     int
+		ttfbMS    int
 	)
 
 	if !dnsStart.IsZero() && !dnsDone.IsZero() {
 		dnsMS = int(dnsDone.Sub(dnsStart).Milliseconds())
+	}
+	if !connectStart.IsZero() && !connectDone.IsZero() {
+		connectMS = int(connectDone.Sub(connectStart).Milliseconds())
 	}
 	if !tlsStart.IsZero() && !tlsDone.IsZero() {
 		tlsMS = int(tlsDone.Sub(tlsStart).Milliseconds())
@@ -158,6 +176,7 @@ func (p *Prober) Execute(ctx context.Context, job domain.MonitorJob) ProbeResult
 		StatusCode:   &code,
 		LatencyMS:    int(totalLatency.Milliseconds()),
 		DNSMS:        dnsMS,
+		ConnectMS:    connectMS,
 		TLSMS:        tlsMS,
 		TTFBMS:       ttfbMS,
 		IsUp:         isUp,

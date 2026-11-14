@@ -46,6 +46,13 @@ func (h *MonitorHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// RBAC: Only ADMIN can create monitors
+	userRole := GetUserRole(r.Context())
+	if userRole != domain.RoleAdmin {
+		RespondError(w, domain.NewForbiddenError("admin role required to create monitors"))
+		return
+	}
+
 	var input domain.MonitorCreateInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		RespondError(w, domain.NewValidationError("invalid json request payload", nil))
@@ -98,6 +105,13 @@ func (h *MonitorHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// RBAC: Only ADMIN can update monitors
+	userRole := GetUserRole(r.Context())
+	if userRole != domain.RoleAdmin {
+		RespondError(w, domain.NewForbiddenError("admin role required to update monitors"))
+		return
+	}
+
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -124,6 +138,13 @@ func (h *MonitorHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
+		return
+	}
+
+	// RBAC: Only ADMIN can delete monitors
+	userRole := GetUserRole(r.Context())
+	if userRole != domain.RoleAdmin {
+		RespondError(w, domain.NewForbiddenError("admin role required to delete monitors"))
 		return
 	}
 

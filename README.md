@@ -52,16 +52,19 @@ Get PulseGrid up and running locally in under 2 minutes:
 git clone https://github.com/rj9884/pulseGrid.git
 cd pulseGrid
 
-# 2. Start PostgreSQL 16 & Redis 7 containers
+# 2. Install dependencies (Go modules + npm packages)
+make setup
+
+# 3. Start PostgreSQL 16 & Redis 7 containers
 make docker-up
 
-# 3. Execute database schema migrations
+# 4. Execute database schema migrations
 make migrate-up
 
-# 4. Launch backend API engine (Terminal 1)
+# 5. Launch backend API engine (Terminal 1)
 make run-backend
 
-# 5. Launch frontend Next.js interface (Terminal 2)
+# 6. Launch frontend Next.js interface (Terminal 2)
 make run-frontend
 ```
 
@@ -125,7 +128,21 @@ pulseGrid/
 - [Node.js](https://nodejs.org/) (22+) & `npm`
 - [Docker](https://www.docker.com/) & Docker Compose
 
-### 1. Start Infrastructure Services
+### 1. Install Dependencies
+
+Install Go module dependencies and frontend npm packages:
+
+```bash
+make setup
+```
+
+Or individually:
+```bash
+make install-backend  # Download Go modules
+make install-frontend # Install npm packages
+```
+
+### 2. Start Infrastructure Services
 
 Start PostgreSQL and Redis in the background:
 
@@ -133,7 +150,7 @@ Start PostgreSQL and Redis in the background:
 make docker-up
 ```
 
-### 2. Apply Database Migrations
+### 3. Apply Database Migrations
 
 Apply SQL migrations:
 
@@ -141,7 +158,7 @@ Apply SQL migrations:
 make migrate-up
 ```
 
-### 3. Run Backend Service
+### 4. Run Backend Service
 
 Start the Go API server:
 
@@ -153,7 +170,7 @@ The API server will listen on `http://localhost:8080`.
 - Health check: `http://localhost:8080/healthz`
 - Prometheus metrics: `http://localhost:8080/metrics`
 
-### 4. Run Frontend Dashboard
+### 5. Run Frontend Dashboard
 
 Start Next.js development server:
 

@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS check_results (
     status_code INT,
     latency_ms INT NOT NULL,
     dns_ms INT DEFAULT 0,
+    connect_ms INT DEFAULT 0,
     tls_ms INT DEFAULT 0,
     ttfb_ms INT DEFAULT 0,
     is_up BOOLEAN NOT NULL,

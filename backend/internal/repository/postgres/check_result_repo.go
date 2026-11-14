@@ -21,8 +21,8 @@ func NewCheckResultRepo(pool *pgxpool.Pool) *CheckResultRepo {
 func (r *CheckResultRepo) Create(ctx context.Context, res *domain.CheckResult) error {
 	query := `
 		INSERT INTO check_results (
-			monitor_id, status_code, latency_ms, dns_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			monitor_id, status_code, latency_ms, dns_ms, connect_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id
 	`
 	if res.CheckedAt.IsZero() {
@@ -30,7 +30,7 @@ func (r *CheckResultRepo) Create(ctx context.Context, res *domain.CheckResult) e
 	}
 
 	return r.pool.QueryRow(ctx, query,
-		res.MonitorID, res.StatusCode, res.LatencyMS, res.DNSMS, res.TLSMS, res.TTFBMS,
+		res.MonitorID, res.StatusCode, res.LatencyMS, res.DNSMS, res.ConnectMS, res.TLSMS, res.TTFBMS,
 		res.IsUp, res.ErrorMessage, res.CheckedAt,
 	).Scan(&res.ID)
 }
@@ -44,7 +44,7 @@ func (r *CheckResultRepo) ListByMonitorID(ctx context.Context, monitorID uuid.UU
 	}
 
 	query := `
-		SELECT id, monitor_id, status_code, latency_ms, dns_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
+		SELECT id, monitor_id, status_code, latency_ms, dns_ms, connect_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
 		FROM check_results
 		WHERE monitor_id = $1
 		ORDER BY checked_at DESC
@@ -62,7 +62,7 @@ func (r *CheckResultRepo) ListByMonitorID(ctx context.Context, monitorID uuid.UU
 		var item domain.CheckResult
 		err := rows.Scan(
 			&item.ID, &item.MonitorID, &item.StatusCode, &item.LatencyMS, &item.DNSMS,
-			&item.TLSMS, &item.TTFBMS, &item.IsUp, &item.ErrorMessage, &item.CheckedAt,
+			&item.ConnectMS, &item.TLSMS, &item.TTFBMS, &item.IsUp, &item.ErrorMessage, &item.CheckedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("scan check result: %w", err)

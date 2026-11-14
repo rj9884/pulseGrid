@@ -68,6 +68,13 @@ func (h *IncidentHandler) CreateAlertChannel(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// RBAC: Only ADMIN can create alert channels
+	userRole := GetUserRole(r.Context())
+	if userRole != domain.RoleAdmin {
+		RespondError(w, domain.NewForbiddenError("admin role required to create alert channels"))
+		return
+	}
+
 	var input domain.AlertChannelCreateInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		RespondError(w, domain.NewValidationError("invalid json request payload", nil))
@@ -87,6 +94,13 @@ func (h *IncidentHandler) DeleteAlertChannel(w http.ResponseWriter, r *http.Requ
 	userID, ok := GetUserID(r.Context())
 	if !ok {
 		RespondError(w, domain.NewUnauthorizedError("unauthenticated"))
+		return
+	}
+
+	// RBAC: Only ADMIN can delete alert channels
+	userRole := GetUserRole(r.Context())
+	if userRole != domain.RoleAdmin {
+		RespondError(w, domain.NewForbiddenError("admin role required to delete alert channels"))
 		return
 	}
 

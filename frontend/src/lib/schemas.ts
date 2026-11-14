@@ -41,6 +41,7 @@ export const CheckEventSchema = z.object({
   status_code: z.number().nullable().optional(),
   latency_ms: z.number(),
   dns_ms: z.number().default(0),
+  connect_ms: z.number().default(0),
   tls_ms: z.number().default(0),
   ttfb_ms: z.number().default(0),
   is_up: z.boolean(),
@@ -55,6 +56,7 @@ export interface CheckResultSummary {
   status_code?: number | null;
   latency_ms: number;
   dns_ms?: number;
+  connect_ms?: number;
   tls_ms?: number;
   ttfb_ms?: number;
   is_up: boolean;
