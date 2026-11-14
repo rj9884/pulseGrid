@@ -60,10 +60,10 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ id: st
         <div className="flex flex-col space-y-4">
           <Link
             href="/"
-            className="flex items-center space-x-1.5 text-xs text-text-muted hover:text-white transition-colors w-fit"
+            className="inline-flex items-center space-x-1.5 text-xs font-medium text-text-muted hover:text-white transition-colors bg-surface-card/40 border border-border-subtle px-2.5 py-1.5 rounded-lg w-fit"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Monitors</span>
+            <span>Back to Dashboard</span>
           </Link>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

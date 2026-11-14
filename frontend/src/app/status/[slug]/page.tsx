@@ -1,4 +1,5 @@
-import { CheckCircle2, AlertTriangle, AlertCircle, Shield, Zap } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, AlertTriangle, AlertCircle, Shield, Zap, ArrowLeft } from "lucide-react";
 import { Monitor } from "@/lib/schemas";
 import { UptimeBar } from "@/components/ui/uptime-bar";
 
@@ -46,8 +47,41 @@ export default async function PublicStatusPage({
   const isAllOperational = data.system_status === "OPERATIONAL" && data.monitors_down === 0;
 
   return (
-    <div className="min-h-screen bg-canvas text-text-secondary flex flex-col items-center">
-      <div className="w-full max-w-4xl px-4 sm:px-6 py-12 space-y-8">
+    <div className="min-h-screen bg-canvas text-text-secondary flex flex-col">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-40 w-full border-b border-border-subtle bg-surface-base/80 backdrop-blur-md">
+        <div className="container mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
+          <Link href="/" className="flex items-center space-x-2.5 group">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-[0_1px_2px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.35)] transition-transform duration-200 group-hover:scale-105">
+              <Zap className="h-4 w-4 fill-white" />
+            </span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="font-bold text-base text-white tracking-tight">PulseGrid</span>
+              <span className="hidden sm:inline-block text-[10px] font-mono uppercase tracking-wider text-text-accent px-1.5 py-0.2 rounded bg-brand-primary/10 border border-brand-primary/25">
+                v1.0
+              </span>
+            </div>
+          </Link>
+
+          <div className="flex items-center space-x-2.5 sm:space-x-3">
+            <Link
+              href="/"
+              className="flex items-center space-x-1.5 rounded-lg border border-border-subtle bg-surface-card/40 px-3 py-1.5 text-xs sm:text-sm font-medium text-text-muted hover:border-border-hover hover:bg-surface-card hover:text-white transition-colors"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Back to Dashboard</span>
+            </Link>
+            <Link
+              href="/login"
+              className="hidden sm:flex items-center space-x-1.5 rounded-lg border border-border-subtle bg-surface-card/30 px-3 py-1.5 text-xs sm:text-sm font-medium text-text-muted hover:border-border-hover hover:text-white transition-colors"
+            >
+              <span>Sign In</span>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-8 flex-1">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-subtle pb-6">
           <div className="flex items-center space-x-3.5">

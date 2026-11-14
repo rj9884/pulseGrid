@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle, Clock, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, ShieldCheck, ArrowLeft } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { Incident } from "@/lib/schemas";
 import { Navbar } from "@/components/ui/navbar";
@@ -22,11 +23,20 @@ export default function IncidentsPage() {
       <Navbar />
 
       <main className="container mx-auto max-w-7xl px-4 sm:px-6 py-8 flex-1 space-y-7">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Incidents & Outages</h1>
-          <p className="text-xs sm:text-sm text-text-muted mt-1">
-            Real-time audit log of detected downtime, flapping events, and automated resolution timelines
-          </p>
+        <div className="space-y-3">
+          <Link
+            href="/"
+            className="inline-flex items-center space-x-1.5 text-xs font-medium text-text-muted hover:text-white transition-colors bg-surface-card/40 border border-border-subtle px-2.5 py-1.5 rounded-lg"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Back to Dashboard</span>
+          </Link>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Incidents & Outages</h1>
+            <p className="text-xs sm:text-sm text-text-muted mt-1">
+              Real-time audit log of detected downtime, flapping events, and automated resolution timelines
+            </p>
+          </div>
         </div>
 
         {/* Active Outage Banner */}

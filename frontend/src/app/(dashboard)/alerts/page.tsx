@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Bell, CheckCircle2, Shield } from "lucide-react";
+import { Plus, Trash2, Bell, CheckCircle2, Shield, ArrowLeft } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest } from "@/lib/api";
@@ -58,17 +59,26 @@ export default function AlertsPage() {
       <Navbar />
 
       <main className="container mx-auto max-w-7xl px-4 sm:px-6 py-8 flex-1 space-y-7">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Alert Routing & Integrations</h1>
-            <p className="text-xs sm:text-sm text-text-muted mt-1">
-              Configure Webhook endpoints for automated incident dispatch to Slack, Discord, and on-call paging
-            </p>
+        <div className="flex flex-col gap-3">
+          <Link
+            href="/"
+            className="inline-flex items-center space-x-1.5 text-xs font-medium text-text-muted hover:text-white transition-colors bg-surface-card/40 border border-border-subtle px-2.5 py-1.5 rounded-lg self-start"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Back to Dashboard</span>
+          </Link>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Alert Routing & Integrations</h1>
+              <p className="text-xs sm:text-sm text-text-muted mt-1">
+                Configure Webhook endpoints for automated incident dispatch to Slack, Discord, and on-call paging
+              </p>
+            </div>
+            <Button onClick={() => setIsModalOpen(true)} className="flex items-center space-x-2 self-start sm:self-auto cursor-pointer">
+              <Plus className="h-4 w-4" />
+              <span>Add Webhook</span>
+            </Button>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} className="flex items-center space-x-2 self-start sm:self-auto cursor-pointer">
-            <Plus className="h-4 w-4" />
-            <span>Add Webhook</span>
-          </Button>
         </div>
 
         <Card>

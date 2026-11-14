@@ -2,27 +2,36 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, AlertTriangle, Bell, LogOut, Radio, Zap } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Activity, AlertTriangle, Bell, LogIn, LogOut, Radio, UserPlus, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { setAccessToken } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
 import { useEventStream } from "@/hooks/use-event-stream";
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { isAuthenticated, logout } = useAuth();
   const { isConnected } = useEventStream();
 
   const handleLogout = () => {
-    setAccessToken(null);
-    router.push("/login");
+    logout();
+    queryClient.clear();
+    router.push("/");
   };
 
-  const navLinks = [
-    { href: "/", label: "Dashboard", icon: Activity },
-    { href: "/incidents", label: "Incidents", icon: AlertTriangle },
-    { href: "/alerts", label: "Alerts", icon: Bell },
-    { href: "/status/global", label: "Status Page", icon: Radio },
-  ];
+  const navLinks = isAuthenticated
+    ? [
+        { href: "/", label: "Dashboard", icon: Activity },
+        { href: "/incidents", label: "Incidents", icon: AlertTriangle },
+        { href: "/alerts", label: "Alerts", icon: Bell },
+        { href: "/status/global", label: "Status Page", icon: Radio },
+      ]
+    : [
+        { href: "/", label: "Overview", icon: Activity },
+        { href: "/status/global", label: "Status Page", icon: Radio },
+      ];
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border-subtle bg-surface-base/80 backdrop-blur-md">
@@ -63,29 +72,50 @@ export function Navbar() {
           </nav>
         </div>
 
-        <div className="flex items-center space-x-3 sm:space-x-4">
-          <div className="flex items-center space-x-2 rounded-full border border-border-subtle bg-surface-card/40 px-2.5 py-1 text-xs">
-            {isConnected ? (
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
-            ) : (
-              <span className="h-2 w-2 rounded-full bg-zinc-600" />
-            )}
-            <span className="text-[11px] font-medium text-text-muted hidden sm:inline">
-              {isConnected ? "Live Pulse" : "Connecting..."}
-            </span>
-          </div>
+        <div className="flex items-center space-x-2.5 sm:space-x-3">
+          {isAuthenticated ? (
+            <>
+              <div className="flex items-center space-x-2 rounded-full border border-border-subtle bg-surface-card/40 px-2.5 py-1 text-xs">
+                {isConnected ? (
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                  </span>
+                ) : (
+                  <span className="h-2 w-2 rounded-full bg-zinc-600" />
+                )}
+                <span className="text-[11px] font-medium text-text-muted hidden sm:inline">
+                  {isConnected ? "Live Pulse" : "Connecting..."}
+                </span>
+              </div>
 
-          <button
-            onClick={handleLogout}
-            className="flex items-center space-x-1.5 rounded-lg border border-border-subtle bg-surface-card/30 px-2.5 py-1 text-xs font-medium text-text-muted hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
-            title="Log out of session"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Logout</span>
-          </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-1.5 rounded-lg border border-border-subtle bg-surface-card/30 px-2.5 py-1 text-xs font-medium text-text-muted hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
+                title="Log out of session and return to home"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <Link
+                href="/login"
+                className="flex items-center space-x-1.5 rounded-lg border border-border-subtle bg-surface-card/40 px-3 py-1.5 text-xs sm:text-sm font-medium text-text-muted hover:border-border-hover hover:bg-surface-card hover:text-white transition-colors"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                <span>Sign In</span>
+              </Link>
+              <Link
+                href="/register"
+                className="flex items-center space-x-1.5 rounded-lg bg-brand-primary px-3 py-1.5 text-xs sm:text-sm font-medium text-white hover:bg-brand-hover shadow-xs transition-colors"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                <span>Get Started</span>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </header>
