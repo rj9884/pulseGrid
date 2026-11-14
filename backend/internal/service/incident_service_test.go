@@ -99,4 +99,156 @@ func TestIncidentService_AlertChannels(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, ch)
 	})
+
+	t.Run("creates alert channel with IsEnabled false", func(t *testing.T) {
+		incRepo := new(MockIncidentRepo)
+		alertRepo := new(MockAlertChannelRepo)
+		svc := NewIncidentService(incRepo, alertRepo, true)
+
+		alertRepo.On("Create", ctx, mock.AnythingOfType("*domain.AlertChannel")).Return(nil)
+
+		disabled := false
+		ch, err := svc.CreateAlertChannel(ctx, userID, domain.AlertChannelCreateInput{
+			Name:        "Discord Alerts",
+			WebhookURL:  "https://discord.com/api/webhooks/test",
+			IsEnabled:   &disabled,
+		})
+
+		require.NoError(t, err)
+		assert.Equal(t, "Discord Alerts", ch.Name)
+		assert.False(t, ch.IsEnabled)
+		alertRepo.AssertExpectations(t)
+	})
+
+	t.Run("rejects private network when allowPrivate is false", func(t *testing.T) {
+		incRepo := new(MockIncidentRepo)
+		alertRepo := new(MockAlertChannelRepo)
+		svc := NewIncidentService(incRepo, alertRepo, false)
+
+		ch, err := svc.CreateAlertChannel(ctx, userID, domain.AlertChannelCreateInput{
+			Name:       "Internal Webhook",
+			WebhookURL: "http://10.0.0.1:9000/webhook",
+		})
+
+		assert.Error(t, err)
+		assert.Nil(t, ch)
+	})
+}
+
+func TestIncidentService_ListIncidents(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+
+	t.Run("returns list of incidents", func(t *testing.T) {
+		incRepo := new(MockIncidentRepo)
+		alertRepo := new(MockAlertChannelRepo)
+		svc := NewIncidentService(incRepo, alertRepo, true)
+
+		expected := []domain.Incident{
+			{ID: uuid.New(), MonitorID: uuid.New(), Status: domain.IncidentOpen},
+			{ID: uuid.New(), MonitorID: uuid.New(), Status: domain.IncidentResolved},
+		}
+
+		incRepo.On("List", ctx, &userID, 10, 0).Return(expected, nil)
+
+		incidents, err := svc.ListIncidents(ctx, &userID, 10, 0)
+		require.NoError(t, err)
+		assert.Len(t, incidents, 2)
+		incRepo.AssertExpectations(t)
+	})
+
+	t.Run("returns all incidents when userID is nil", func(t *testing.T) {
+		incRepo := new(MockIncidentRepo)
+		alertRepo := new(MockAlertChannelRepo)
+		svc := NewIncidentService(incRepo, alertRepo, true)
+
+		expected := []domain.Incident{
+			{ID: uuid.New(), MonitorID: uuid.New(), Status: domain.IncidentOpen},
+		}
+
+		incRepo.On("List", ctx, (*uuid.UUID)(nil), 10, 0).Return(expected, nil)
+
+		incidents, err := svc.ListIncidents(ctx, nil, 10, 0)
+		require.NoError(t, err)
+		assert.Len(t, incidents, 1)
+		incRepo.AssertExpectations(t)
+	})
+
+	t.Run("returns empty list when none exist", func(t *testing.T) {
+		incRepo := new(MockIncidentRepo)
+		alertRepo := new(MockAlertChannelRepo)
+		svc := NewIncidentService(incRepo, alertRepo, true)
+
+		incRepo.On("List", ctx, &userID, 10, 0).Return([]domain.Incident{}, nil)
+
+		incidents, err := svc.ListIncidents(ctx, &userID, 10, 0)
+		require.NoError(t, err)
+		assert.Empty(t, incidents)
+	})
+}
+
+func TestIncidentService_ListAlertChannels(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+
+	t.Run("returns list of alert channels", func(t *testing.T) {
+		incRepo := new(MockIncidentRepo)
+		alertRepo := new(MockAlertChannelRepo)
+		svc := NewIncidentService(incRepo, alertRepo, true)
+
+		expected := []domain.AlertChannel{
+			{ID: uuid.New(), UserID: userID, Name: "Slack", IsEnabled: true},
+			{ID: uuid.New(), UserID: userID, Name: "Discord", IsEnabled: false},
+		}
+
+		alertRepo.On("ListByUserID", ctx, userID).Return(expected, nil)
+
+		channels, err := svc.ListAlertChannels(ctx, userID)
+		require.NoError(t, err)
+		assert.Len(t, channels, 2)
+		assert.True(t, channels[0].IsEnabled)
+		assert.False(t, channels[1].IsEnabled)
+		alertRepo.AssertExpectations(t)
+	})
+
+	t.Run("returns empty list when none exist", func(t *testing.T) {
+		incRepo := new(MockIncidentRepo)
+		alertRepo := new(MockAlertChannelRepo)
+		svc := NewIncidentService(incRepo, alertRepo, true)
+
+		alertRepo.On("ListByUserID", ctx, userID).Return([]domain.AlertChannel{}, nil)
+
+		channels, err := svc.ListAlertChannels(ctx, userID)
+		require.NoError(t, err)
+		assert.Empty(t, channels)
+	})
+}
+
+func TestIncidentService_DeleteAlertChannel(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.New()
+	channelID := uuid.New()
+
+	t.Run("deletes alert channel successfully", func(t *testing.T) {
+		incRepo := new(MockIncidentRepo)
+		alertRepo := new(MockAlertChannelRepo)
+		svc := NewIncidentService(incRepo, alertRepo, true)
+
+		alertRepo.On("Delete", ctx, channelID, userID).Return(nil)
+
+		err := svc.DeleteAlertChannel(ctx, channelID, userID)
+		assert.NoError(t, err)
+		alertRepo.AssertExpectations(t)
+	})
+
+	t.Run("propagates repository error", func(t *testing.T) {
+		incRepo := new(MockIncidentRepo)
+		alertRepo := new(MockAlertChannelRepo)
+		svc := NewIncidentService(incRepo, alertRepo, true)
+
+		alertRepo.On("Delete", ctx, channelID, userID).Return(domain.ErrNotFound)
+
+		err := svc.DeleteAlertChannel(ctx, channelID, userID)
+		assert.Error(t, err)
+	})
 }

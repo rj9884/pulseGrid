@@ -107,6 +107,23 @@ func TestAuthService_Register(t *testing.T) {
 		assert.Nil(t, profile)
 		assert.Nil(t, tokens)
 	})
+
+	t.Run("fails on validation error", func(t *testing.T) {
+		userRepo := new(MockUserRepo)
+		tokenStore := new(MockTokenStore)
+		svc := NewAuthService(userRepo, tokenStore, jwtManager)
+
+		ctx := context.Background()
+		input := domain.RegisterInput{
+			Email:    "invalid-email",
+			Password: "short",
+		}
+
+		profile, tokens, err := svc.Register(ctx, input)
+		assert.Error(t, err)
+		assert.Nil(t, profile)
+		assert.Nil(t, tokens)
+	})
 }
 
 func TestAuthService_Login(t *testing.T) {
@@ -154,5 +171,169 @@ func TestAuthService_Login(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, profile)
 		assert.Nil(t, tokens)
+	})
+
+	t.Run("fails when user not found", func(t *testing.T) {
+		userRepo := new(MockUserRepo)
+		tokenStore := new(MockTokenStore)
+		svc := NewAuthService(userRepo, tokenStore, jwtManager)
+
+		userRepo.On("GetByEmail", ctx, "nonexistent@example.com").Return(nil, domain.ErrNotFound)
+
+		profile, tokens, err := svc.Login(ctx, domain.LoginInput{
+			Email:    "nonexistent@example.com",
+			Password: "anypassword",
+		})
+
+		assert.Error(t, err)
+		assert.Nil(t, profile)
+		assert.Nil(t, tokens)
+	})
+
+	t.Run("fails on validation error", func(t *testing.T) {
+		userRepo := new(MockUserRepo)
+		tokenStore := new(MockTokenStore)
+		svc := NewAuthService(userRepo, tokenStore, jwtManager)
+
+		profile, tokens, err := svc.Login(ctx, domain.LoginInput{
+			Email:    "",
+			Password: "",
+		})
+
+		assert.Error(t, err)
+		assert.Nil(t, profile)
+		assert.Nil(t, tokens)
+	})
+}
+
+func TestAuthService_Refresh(t *testing.T) {
+	jwtManager := auth.NewJWTManager("test-access-secret-32-chars-long!", "test-refresh-secret-32-chars-long", 15*time.Minute, 7*24*time.Hour)
+	ctx := context.Background()
+
+	userID := uuid.New()
+	refreshToken, _ := jwtManager.GenerateRefreshToken(userID, domain.RoleAdmin)
+	claims, _ := jwtManager.ValidateRefreshToken(refreshToken)
+
+	t.Run("successfully refreshes tokens", func(t *testing.T) {
+		userRepo := new(MockUserRepo)
+		tokenStore := new(MockTokenStore)
+		svc := NewAuthService(userRepo, tokenStore, jwtManager)
+
+		tokenStore.On("ValidateRefreshToken", ctx, userID, claims.ID).Return(true, nil)
+		tokenStore.On("RevokeRefreshToken", ctx, userID, claims.ID).Return(nil)
+		userRepo.On("GetByID", ctx, userID).Return(&domain.User{
+			ID:    userID,
+			Email: "user@example.com",
+			Role:  domain.RoleAdmin,
+		}, nil)
+		tokenStore.On("StoreRefreshToken", ctx, userID, mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
+
+		tokens, err := svc.Refresh(ctx, refreshToken)
+		require.NoError(t, err)
+		assert.NotEmpty(t, tokens.AccessToken)
+		assert.NotEmpty(t, tokens.RefreshToken)
+	})
+
+	t.Run("fails when token is revoked", func(t *testing.T) {
+		userRepo := new(MockUserRepo)
+		tokenStore := new(MockTokenStore)
+		svc := NewAuthService(userRepo, tokenStore, jwtManager)
+
+		tokenStore.On("ValidateRefreshToken", ctx, userID, claims.ID).Return(false, nil)
+
+		tokens, err := svc.Refresh(ctx, refreshToken)
+		assert.Error(t, err)
+		assert.Nil(t, tokens)
+	})
+
+	t.Run("fails when user no longer exists", func(t *testing.T) {
+		userRepo := new(MockUserRepo)
+		tokenStore := new(MockTokenStore)
+		svc := NewAuthService(userRepo, tokenStore, jwtManager)
+
+		tokenStore.On("ValidateRefreshToken", ctx, userID, claims.ID).Return(true, nil)
+		tokenStore.On("RevokeRefreshToken", ctx, userID, claims.ID).Return(nil)
+		userRepo.On("GetByID", ctx, userID).Return(nil, domain.ErrNotFound)
+
+		tokens, err := svc.Refresh(ctx, refreshToken)
+		assert.Error(t, err)
+		assert.Nil(t, tokens)
+	})
+
+	t.Run("fails on empty token", func(t *testing.T) {
+		userRepo := new(MockUserRepo)
+		tokenStore := new(MockTokenStore)
+		svc := NewAuthService(userRepo, tokenStore, jwtManager)
+
+		tokens, err := svc.Refresh(ctx, "")
+		assert.Error(t, err)
+		assert.Nil(t, tokens)
+	})
+}
+
+func TestAuthService_Logout(t *testing.T) {
+	jwtManager := auth.NewJWTManager("test-access-secret-32-chars-long!", "test-refresh-secret-32-chars-long", 15*time.Minute, 7*24*time.Hour)
+	ctx := context.Background()
+
+	userID := uuid.New()
+	refreshToken, _ := jwtManager.GenerateRefreshToken(userID, domain.RoleAdmin)
+	claims, _ := jwtManager.ValidateRefreshToken(refreshToken)
+
+	t.Run("revokes token on logout", func(t *testing.T) {
+		userRepo := new(MockUserRepo)
+		tokenStore := new(MockTokenStore)
+		svc := NewAuthService(userRepo, tokenStore, jwtManager)
+
+		tokenStore.On("RevokeRefreshToken", ctx, userID, claims.ID).Return(nil)
+
+		err := svc.Logout(ctx, refreshToken)
+		assert.NoError(t, err)
+	})
+
+	t.Run("handles empty token gracefully", func(t *testing.T) {
+		userRepo := new(MockUserRepo)
+		tokenStore := new(MockTokenStore)
+		svc := NewAuthService(userRepo, tokenStore, jwtManager)
+
+		err := svc.Logout(ctx, "")
+		assert.NoError(t, err)
+	})
+}
+
+func TestAuthService_GetProfile(t *testing.T) {
+	jwtManager := auth.NewJWTManager("test-access-secret-32-chars-long!", "test-refresh-secret-32-chars-long", 15*time.Minute, 7*24*time.Hour)
+	ctx := context.Background()
+
+	userID := uuid.New()
+
+	t.Run("returns user profile", func(t *testing.T) {
+		userRepo := new(MockUserRepo)
+		tokenStore := new(MockTokenStore)
+		svc := NewAuthService(userRepo, tokenStore, jwtManager)
+
+		userRepo.On("GetByID", ctx, userID).Return(&domain.User{
+			ID:        userID,
+			Email:     "user@example.com",
+			Role:      domain.RoleViewer,
+			CreatedAt: time.Now(),
+		}, nil)
+
+		profile, err := svc.GetProfile(ctx, userID)
+		require.NoError(t, err)
+		assert.Equal(t, userID, profile.ID)
+		assert.Equal(t, "user@example.com", profile.Email)
+		assert.Equal(t, domain.RoleViewer, profile.Role)
+	})
+
+	t.Run("returns error when user not found", func(t *testing.T) {
+		userRepo := new(MockUserRepo)
+		tokenStore := new(MockTokenStore)
+		svc := NewAuthService(userRepo, tokenStore, jwtManager)
+
+		userRepo.On("GetByID", ctx, userID).Return(nil, domain.ErrNotFound)
+
+		profile, err := svc.GetProfile(ctx, userID)
+		assert.Error(t, err)
+		assert.Nil(t, profile)
 	})
 }
