@@ -66,7 +66,7 @@ func main() {
 
 	authService := service.NewAuthService(userRepo, redisClient, jwtManager)
 	monitorService := service.NewMonitorService(monitorRepo, checkResultRepo, cfg.AllowPrivateNetworks)
-	incidentService := service.NewIncidentService(incidentRepo, alertChannelRepo)
+	incidentService := service.NewIncidentService(incidentRepo, alertChannelRepo, cfg.AllowPrivateNetworks)
 
 	// 5. Initialize SSE Hub
 	sseHub := sse.NewHub(redisClient, jwtManager, appLogger)

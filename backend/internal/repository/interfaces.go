@@ -20,6 +20,7 @@ type MonitorRepository interface {
 	GetByIDWithStats(ctx context.Context, id uuid.UUID) (*domain.MonitorWithStats, error)
 	ListByUserID(ctx context.Context, userID uuid.UUID) ([]domain.MonitorWithStats, error)
 	FetchDueMonitors(ctx context.Context, limit int) ([]domain.MonitorJob, error)
+	MarkMonitorsChecked(ctx context.Context, monitorIDs []uuid.UUID, checkedAt time.Time) error
 	Update(ctx context.Context, monitor *domain.Monitor) error
 	UpdateState(ctx context.Context, id uuid.UUID, status domain.MonitorStatus, consecutiveFailures int, lastCheckedAt time.Time) error
 	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error

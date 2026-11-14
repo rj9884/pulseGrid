@@ -14,17 +14,20 @@ import (
 )
 
 type IncidentService struct {
-	incidentRepo     repository.IncidentRepository
-	alertChannelRepo repository.AlertChannelRepository
+	incidentRepo         repository.IncidentRepository
+	alertChannelRepo     repository.AlertChannelRepository
+	allowPrivateNetworks bool
 }
 
 func NewIncidentService(
 	incidentRepo repository.IncidentRepository,
 	alertChannelRepo repository.AlertChannelRepository,
+	allowPrivateNetworks bool,
 ) *IncidentService {
 	return &IncidentService{
-		incidentRepo:     incidentRepo,
-		alertChannelRepo: alertChannelRepo,
+		incidentRepo:         incidentRepo,
+		alertChannelRepo:     alertChannelRepo,
+		allowPrivateNetworks: allowPrivateNetworks,
 	}
 }
 
@@ -38,7 +41,7 @@ func (s *IncidentService) CreateAlertChannel(ctx context.Context, userID uuid.UU
 	}
 
 	// SSRF prevention: Validate webhook URL against private/internal networks
-	if _, err := security.ValidateTargetURL(input.WebhookURL, false); err != nil {
+	if _, err := security.ValidateTargetURL(input.WebhookURL, s.allowPrivateNetworks); err != nil {
 		return nil, domain.NewValidationError("webhook URL is disallowed", map[string]string{
 			"webhook_url": err.Error(),
 		})

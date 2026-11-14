@@ -245,17 +245,13 @@ func (r *MonitorRepo) GetByIDWithStats(ctx context.Context, id uuid.UUID) (*doma
 
 func (r *MonitorRepo) FetchDueMonitors(ctx context.Context, limit int) ([]domain.MonitorJob, error) {
 	query := `
-		UPDATE monitors
-		SET last_checked_at = NOW()
-		WHERE id IN (
-			SELECT id FROM monitors
-			WHERE is_active = TRUE
-			  AND (last_checked_at IS NULL OR last_checked_at + (interval_seconds * INTERVAL '1 second') <= NOW())
-			ORDER BY last_checked_at ASC NULLS FIRST
-			LIMIT $1
-			FOR UPDATE SKIP LOCKED
-		)
-		RETURNING id, user_id, url, method, headers, expected_status, timeout_ms, consecutive_failures, status
+		SELECT id, user_id, url, method, headers, expected_status, timeout_ms, consecutive_failures, status
+		FROM monitors
+		WHERE is_active = TRUE
+		  AND (last_checked_at IS NULL OR last_checked_at + (interval_seconds * INTERVAL '1 second') <= NOW())
+		ORDER BY last_checked_at ASC NULLS FIRST
+		LIMIT $1
+		FOR UPDATE SKIP LOCKED
 	`
 
 	rows, err := r.pool.Query(ctx, query, limit)
@@ -292,6 +288,25 @@ func (r *MonitorRepo) FetchDueMonitors(ctx context.Context, limit int) ([]domain
 	}
 
 	return jobs, nil
+}
+
+// MarkMonitorsChecked updates last_checked_at for the given monitor IDs.
+// This should be called after successfully submitting jobs to the worker pool.
+func (r *MonitorRepo) MarkMonitorsChecked(ctx context.Context, monitorIDs []uuid.UUID, checkedAt time.Time) error {
+	if len(monitorIDs) == 0 {
+		return nil
+	}
+
+	query := `
+		UPDATE monitors
+		SET last_checked_at = $1, updated_at = NOW()
+		WHERE id = ANY($2)
+	`
+	_, err := r.pool.Exec(ctx, query, checkedAt, monitorIDs)
+	if err != nil {
+		return fmt.Errorf("mark monitors checked: %w", err)
+	}
+	return nil
 }
 
 func (r *MonitorRepo) Update(ctx context.Context, m *domain.Monitor) error {

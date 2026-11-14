@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pulsegrid/backend/internal/repository"
 )
 
@@ -82,7 +83,21 @@ func (s *Scheduler) tick() {
 		return
 	}
 
+	// Track successfully submitted job IDs to mark them as checked
+	var submittedIDs []uuid.UUID
 	for _, job := range jobs {
-		s.cfg.Pool.Submit(job)
+		if s.cfg.Pool.Submit(job) {
+			submittedIDs = append(submittedIDs, job.MonitorID)
+		} else {
+			s.cfg.Logger.Warn("worker pool full, monitor not scheduled this tick", "monitor_id", job.MonitorID)
+		}
+	}
+
+	// Only update last_checked_at for monitors that were successfully queued
+	if len(submittedIDs) > 0 {
+		checkedAt := time.Now()
+		if err := s.cfg.MonitorRepo.MarkMonitorsChecked(ctx, submittedIDs, checkedAt); err != nil {
+			s.cfg.Logger.Error("failed to mark monitors as checked", "error", err)
+		}
 	}
 }
