@@ -18,6 +18,7 @@ interface CheckItem {
   status_code: number | null;
   latency_ms: number;
   dns_ms: number;
+  connect_ms: number;
   tls_ms: number;
   ttfb_ms: number;
   is_up: boolean;
@@ -230,7 +231,7 @@ export default function MonitorDetailPage({ params }: { params: Promise<{ id: st
                           {c.latency_ms}ms
                         </td>
                         <td className="py-2.5 px-3.5 text-text-muted">{c.dns_ms}ms</td>
-                        <td className="py-2.5 px-3.5 text-text-muted">{(c as any).connect_ms ?? 0}ms</td>
+                        <td className="py-2.5 px-3.5 text-text-muted">{c.connect_ms ?? 0}ms</td>
                         <td className="py-2.5 px-3.5 text-text-muted">{c.tls_ms}ms</td>
                         <td className="py-2.5 px-3.5 text-text-muted">{c.ttfb_ms}ms</td>
                         <td className="py-2.5 px-3.5 text-text-muted font-sans">

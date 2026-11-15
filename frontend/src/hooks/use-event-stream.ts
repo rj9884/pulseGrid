@@ -31,6 +31,9 @@ export function useEventStream() {
   const maxReconnectAttempts = 10;
   const baseReconnectDelay = 1000; // 1 second
 
+  // Use a ref to hold the connect function to avoid circular dependency
+  const connectRef = useRef<() => void | undefined>(undefined);
+
   const connect = useCallback(() => {
     if (!token) return;
 
@@ -126,10 +129,15 @@ export function useEventStream() {
           30000 // Cap at 30 seconds
         );
         reconnectAttemptRef.current += 1;
-        setTimeout(connect, delay);
+        setTimeout(() => connectRef.current?.(), delay);
       }
     };
   }, [queryClient, token]);
+
+  // Update ref after connect is defined (useEffect to avoid render-time ref update)
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     connect();
