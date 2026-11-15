@@ -1,3 +1,7 @@
+<img width="2816" height="1518" alt="preview" src="https://github.com/user-attachments/assets/b749843a-1968-4653-8741-6fbe419954eb" />
+
+---
+
 # PulseGrid
 
 > High-throughput, distributed API uptime monitor and real-time incident engine.
@@ -26,7 +30,6 @@ PulseGrid schedules concurrent health checks across registered HTTP/HTTPS endpoi
 - [Testing & Quality Gates](#testing--quality-gates)
 - [Performance Benchmarks](#performance-benchmarks)
 - [Technical Highlights](#technical-highlights)
-- [License](#license)
 
 ---
 
@@ -101,8 +104,8 @@ Once running, access the services:
 - **Health Check:** [http://localhost:8080/healthz](http://localhost:8080/healthz)
 - **Prometheus Metrics:** [http://localhost:8080/metrics](http://localhost:8080/metrics)
 
-<!-- SCREENSHOT: Dashboard overview showing monitor cards, uptime bars, and stats cards -->
-<!-- Place screenshot at: docs/screenshots/dashboard-overview.png -->
+<img width="2810" height="1406" alt="home" src="https://github.com/user-attachments/assets/5ed3befb-9082-4b50-b6ce-0d2d8501c58f" />
+
 
 ---
 
@@ -213,8 +216,8 @@ make run-frontend
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-<!-- SCREENSHOT: Public landing page with live telemetry preview -->
-<!-- Place screenshot at: docs/screenshots/public-landing.png -->
+<img width="2814" height="1402" alt="status" src="https://github.com/user-attachments/assets/2cd7d1e6-1edc-4c71-aba7-61a26583923f" />
+
 
 ---
 
@@ -239,9 +242,6 @@ Services will be available at:
 - Backend API: `http://localhost:8080`
 
 Environment variables can be overridden via a `.env` file or shell export. See [Environment Variables](#environment-variables) for the complete list.
-
-<!-- SCREENSHOT: Docker Compose services running -->
-<!-- Place screenshot at: docs/screenshots/docker-compose.png -->
 
 ---
 
@@ -357,8 +357,11 @@ Run the benchmark yourself:
 k6 run scripts/loadtest-light.js
 ```
 
-<!-- SCREENSHOT: k6 benchmark results -->
-<!-- Place screenshot at: docs/screenshots/k6-benchmark.png -->
+<img width="2672" height="1538" alt="R1" src="https://github.com/user-attachments/assets/42ee0371-c767-493d-9a4c-fff8caa4710b" />
+
+<img width="2664" height="1540" alt="R2" src="https://github.com/user-attachments/assets/72abd4af-7bbf-425e-999a-390131217c0f" />
+
+
 
 ---
 
@@ -393,11 +396,5 @@ This project demonstrates production-grade engineering across the full stack:
 | **Docker Image (Frontend)** | `docker build -t pulsegrid-frontend ./frontend` | ~180 MB (node:22-alpine runner) |
 
 All metrics above are reproducible — run the commands on your hardware to verify.
-
----
-
-## License
-
-MIT
 
 ---
