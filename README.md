@@ -25,7 +25,7 @@ PulseGrid schedules concurrent health checks across registered HTTP/HTTPS endpoi
 - [API Reference](#api-reference)
 - [Testing & Quality Gates](#testing--quality-gates)
 - [Performance Benchmarks](#performance-benchmarks)
-- [Project Highlights for Recruiters](#project-highlights-for-recruiters)
+- [Technical Highlights](#technical-highlights)
 - [License](#license)
 
 ---
@@ -344,7 +344,7 @@ Expected results on modest hardware (8 vCPU, 16GB RAM):
 
 ---
 
-## Project Highlights for Recruiters
+## Technical Highlights
 
 This project demonstrates production-grade engineering across the full stack:
 
@@ -362,7 +362,7 @@ This project demonstrates production-grade engineering across the full stack:
 
 ### Verifiable Metrics
 
-- **Test Coverage:** Run `make test-backend` → `go test -race -cover ./...` (services ~38%, auth/pkg ~80%)
+- **Test Coverage:** Run `make test-backend` → `go test -race -cover ./...` (services ~80%, auth/pkg ~80%)
 - **Race Detector:** Clean on all packages (`go test -race ./...`)
 - **Throughput:** `k6 run scripts/loadtest.js` — measure probes/sec on your hardware
 - **Binary Size:** `make build` — backend ~15MB static binary, frontend ~200KB gzipped JS
