@@ -28,12 +28,15 @@ export function useEventStream() {
   const [lastEvent, setLastEvent] = useState<CheckEvent | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const connectRef = useRef<(() => void) | null>(null);
 
   const connect = useCallback(() => {
     if (!token) return;
     if (eventSourceRef.current) return; // Already connected
 
-    const url = new URL(SSE_URL);
+    // Use absolute URL to avoid "Failed to construct 'URL': Invalid URL" in some environments
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const url = new URL(SSE_URL, baseUrl);
     url.searchParams.set("token", token);
 
     const es = new EventSource(url.toString(), { withCredentials: true });
@@ -126,7 +129,7 @@ export function useEventStream() {
             eventSourceRef.current.close();
             eventSourceRef.current = null;
             reconnectTimeoutRef.current = null;
-            connect(); // Reconnect
+            connectRef.current?.(); // Reconnect via ref
           } else {
             reconnectTimeoutRef.current = null;
           }
@@ -134,6 +137,11 @@ export function useEventStream() {
       }
     };
   }, [queryClient, token]);
+
+  // Update ref when connect changes
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     if (token) {
