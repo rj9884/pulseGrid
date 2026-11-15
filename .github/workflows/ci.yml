@@ -93,7 +93,7 @@ jobs:
 
       - name: Start PostgreSQL & Redis
         run: |
-          docker run -d --name postgres -e POSTGRES_USER=pulsegrid -e POSTGRES_PASSWORD=pulsegrid -e POSTGRES_DB=pulsegrid_db -p 5432:5432 postgres:16-alpine
+          docker run -d --name postgres -e POSTGRES_USER=pulsegrid -e POSTGRES_PASSWORD=pulsegrid_secret -e POSTGRES_DB=pulsegrid_db -p 5432:5432 postgres:16-alpine
           docker run -d --name redis -p 6379:6379 redis:7-alpine
 
       - name: Wait for PostgreSQL
