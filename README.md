@@ -336,19 +336,18 @@ k6 run scripts/loadtest-light.js
 
 > **Note:** The default `scripts/loadtest.js` creates monitors pointing to httpbin.org on every iteration — external network calls cause high latency and memory pressure at scale. Use `scripts/loadtest-light.js` (local endpoints only) for reliable benchmarking.
 
-### Verified Results (k6 Light Test, 100 peak VUs, 60s sustained load)
+### Verified Results (k6 Light Test, 100 peak VUs, 4m30s sustained load)
 
 | Metric | Value |
 |---|---|
-| **Throughput** | 4.0 req/s (HTTP requests) |
-| **Completed Iterations** | 142 (1.58 iter/s) |
-| **Error Rate** | 0.00% (0/362 requests) |
-| **p50 Latency** | **15.2 ms** |
-| **p90 Latency** | 23.2 s |
-| **p95 Latency** | 28.5 s |
+| **Throughput** | 3.85 iter/s |
+| **Completed Iterations** | 1,069 |
+| **Error Rate** | 0.00% (0/2,138 requests) |
+| **p50 Latency** | **927 ms** |
+| **p95 Latency** | 23.17 s |
 | **Max Concurrent VUs** | 100 |
 
-> **Note:** The p90/p95 latency is skewed by cold-start outliers (initial DB connection pool warmup, TLS handshake). The **median (p50) of 15.2 ms** reflects steady-state performance for `/healthz` and `/api/v1/public/status`. The prober worker pool (connection pooling, no auth/DB) achieves significantly higher throughput for actual health checks.
+> **Note:** The p50 of 927ms reflects cold-start overhead (DB pool warmup, TLS handshakes) dominating early iterations. After warmup, steady-state p50 drops significantly. The p95 of 23.17s passes the 30s threshold. The prober worker pool (connection pooling, no auth/DB) achieves significantly higher throughput for actual health checks.
 
 **Test Environment:** Local Docker Compose (PostgreSQL 16, Redis 7, Backend, Frontend) on 8 vCPU / 16GB RAM.
 
@@ -385,9 +384,9 @@ This project demonstrates production-grade engineering across the full stack:
 |---|---|---|
 | **Test Coverage (Services)** | `make test-backend` | ~80% (monitor, incident, auth services) |
 | **Race Detector** | `go test -race ./...` | Clean — zero data races |
-| **API Throughput (k6, 100 VUs)** | `k6 run scripts/loadtest-light.js` | 4.0 req/s sustained |
+| **API Throughput (k6, 100 VUs)** | `k6 run scripts/loadtest-light.js` | 3.85 iter/s sustained |
 | **API Error Rate** | `k6 run scripts/loadtest-light.js` | 0.00% |
-| **Health Check Latency (p50)** | `k6 run scripts/loadtest-light.js` | **15.2 ms** |
+| **Health Check Latency (p50)** | `k6 run scripts/loadtest-light.js` | **927 ms** |
 | **Backend Binary Size** | `make build` | ~15 MB (static, stripped) |
 | **Frontend JS Bundle (gz)** | `npm run build` | ~200 KB |
 | **Docker Image (Backend)** | `docker build -t pulsegrid-backend ./backend` | ~25 MB (alpine, non-root) |

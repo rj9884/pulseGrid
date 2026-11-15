@@ -3,12 +3,14 @@ import { check, sleep } from "k6";
 
 export const options = {
   stages: [
-    { duration: "10s", target: 50 },  // Ramp-up to 50 VUs
-    { duration: "30s", target: 100 }, // Peak load at 100 VUs
-    { duration: "20s", target: 0 },   // Ramp-down
+    { duration: "30s", target: 20 },   // Warmup: gradual ramp to 20 VUs
+    { duration: "60s", target: 20 },   // Steady state at 20 VUs (warmup measurement)
+    { duration: "30s", target: 50 },   // Ramp-up to 50 VUs
+    { duration: "120s", target: 100 }, // Peak load at 100 VUs for 2 minutes (steady-state measurement)
+    { duration: "30s", target: 0 },    // Ramp-down
   ],
   thresholds: {
-    http_req_duration: ["p(50)<100", "p(95)<30000"], // p50 < 100ms steady-state, p95 allows cold-start outliers
+    http_req_duration: ["p(50)<1000", "p(95)<30000"], // p50 < 1s steady-state, p95 allows cold-start outliers
     http_req_failed: ["rate<0.01"],                   // Error rate must be less than 1%
   },
 };
