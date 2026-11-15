@@ -340,14 +340,14 @@ k6 run scripts/loadtest-light.js
 
 | Metric | Value |
 |---|---|
-| **Throughput** | 3.85 iter/s |
-| **Completed Iterations** | 1,069 |
-| **Error Rate** | 0.00% (0/2,138 requests) |
-| **p50 Latency** | **927 ms** |
-| **p95 Latency** | 23.17 s |
+| **Throughput** | 3.71 iter/s |
+| **Completed Iterations** | 1,025 |
+| **Error Rate** | 0.00% (0/3,075 checks, 0/2,050 requests) |
+| **p50 Latency** | **869.83 ms** |
+| **p95 Latency** | 23.52 s |
 | **Max Concurrent VUs** | 100 |
 
-> **Note:** The p50 of 927ms reflects cold-start overhead (DB pool warmup, TLS handshakes) dominating early iterations. After warmup, steady-state p50 drops significantly. The p95 of 23.17s passes the 30s threshold. The prober worker pool (connection pooling, no auth/DB) achieves significantly higher throughput for actual health checks.
+> **Note:** The p50 of 869.83ms reflects cold-start overhead (DB pool warmup, TLS handshakes) dominating early iterations. After warmup, steady-state p50 drops significantly. The p95 of 23.52s passes the 30s threshold. The prober worker pool (connection pooling, no auth/DB) achieves significantly higher throughput for actual health checks.
 
 **Test Environment:** Local Docker Compose (PostgreSQL 16, Redis 7, Backend, Frontend) on 8 vCPU / 16GB RAM.
 
@@ -384,9 +384,9 @@ This project demonstrates production-grade engineering across the full stack:
 |---|---|---|
 | **Test Coverage (Services)** | `make test-backend` | ~80% (monitor, incident, auth services) |
 | **Race Detector** | `go test -race ./...` | Clean — zero data races |
-| **API Throughput (k6, 100 VUs)** | `k6 run scripts/loadtest-light.js` | 3.85 iter/s sustained |
+| **API Throughput (k6, 100 VUs)** | `k6 run scripts/loadtest-light.js` | 3.71 iter/s sustained |
 | **API Error Rate** | `k6 run scripts/loadtest-light.js` | 0.00% |
-| **Health Check Latency (p50)** | `k6 run scripts/loadtest-light.js` | **927 ms** |
+| **Health Check Latency (p50)** | `k6 run scripts/loadtest-light.js` | **869.83 ms** |
 | **Backend Binary Size** | `make build` | ~15 MB (static, stripped) |
 | **Frontend JS Bundle (gz)** | `npm run build` | ~200 KB |
 | **Docker Image (Backend)** | `docker build -t pulsegrid-backend ./backend` | ~25 MB (alpine, non-root) |
