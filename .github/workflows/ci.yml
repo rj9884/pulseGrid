@@ -116,7 +116,11 @@ jobs:
           cd backend
           CGO_ENABLED=0 go build -v ./cmd/api
           ./api &
-          sleep 5
+          # Wait for backend to be healthy
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/healthz > /dev/null 2>&1; then break; fi
+            sleep 1
+          done
 
       - name: Install Frontend Dependencies
         run: |
@@ -136,8 +140,12 @@ jobs:
       - name: Start Frontend Preview Server
         run: |
           cd frontend
-          npm run start &
-          sleep 10
+          NODE_ENV=development npm run start &
+          # Wait for frontend to be ready
+          for i in {1..30}; do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then break; fi
+            sleep 1
+          done
 
       - name: Run Playwright Tests
         run: |
