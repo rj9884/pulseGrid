@@ -25,7 +25,7 @@ type MonitorRepository interface {
 	UpdateState(ctx context.Context, id uuid.UUID, status domain.MonitorStatus, consecutiveFailures int, lastCheckedAt time.Time) error
 	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
 	GetAggregatedMetrics(ctx context.Context, monitorID uuid.UUID, hours int) ([]domain.LatencyBucket, error)
-	GetPublicSummary(ctx context.Context) ([]domain.MonitorWithStats, error)
+	GetPublicSummary(ctx context.Context, limit, offset int) ([]domain.MonitorWithStats, error)
 }
 
 type CheckResultRepository interface {

@@ -76,8 +76,8 @@ func (m *MockMonitorRepo) GetAggregatedMetrics(ctx context.Context, monitorID uu
 	return args.Get(0).([]domain.LatencyBucket), args.Error(1)
 }
 
-func (m *MockMonitorRepo) GetPublicSummary(ctx context.Context) ([]domain.MonitorWithStats, error) {
-	args := m.Called(ctx)
+func (m *MockMonitorRepo) GetPublicSummary(ctx context.Context, limit, offset int) ([]domain.MonitorWithStats, error) {
+	args := m.Called(ctx, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -511,9 +511,9 @@ func TestMonitorService_GetPublicStatus(t *testing.T) {
 			{Monitor: domain.Monitor{ID: uuid.New(), Name: "Public 2"}},
 		}
 
-		mRepo.On("GetPublicSummary", ctx).Return(expected, nil)
+		mRepo.On("GetPublicSummary", ctx, 20, 0).Return(expected, nil)
 
-		monitors, err := svc.GetPublicStatus(ctx)
+		monitors, err := svc.GetPublicStatus(ctx, 20, 0)
 		require.NoError(t, err)
 		assert.Len(t, monitors, 2)
 		mRepo.AssertExpectations(t)
@@ -524,9 +524,9 @@ func TestMonitorService_GetPublicStatus(t *testing.T) {
 		cRepo := new(MockCheckResultRepo)
 		svc := NewMonitorService(mRepo, cRepo, true)
 
-		mRepo.On("GetPublicSummary", ctx).Return(nil, domain.ErrNotFound)
+		mRepo.On("GetPublicSummary", ctx, 20, 0).Return(nil, domain.ErrNotFound)
 
-		monitors, err := svc.GetPublicStatus(ctx)
+		monitors, err := svc.GetPublicStatus(ctx, 20, 0)
 		assert.Error(t, err)
 		assert.Nil(t, monitors)
 	})

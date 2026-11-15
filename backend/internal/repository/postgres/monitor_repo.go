@@ -401,34 +401,22 @@ func (r *MonitorRepo) GetAggregatedMetrics(ctx context.Context, monitorID uuid.U
 	return buckets, nil
 }
 
-func (r *MonitorRepo) GetPublicSummary(ctx context.Context) ([]domain.MonitorWithStats, error) {
+func (r *MonitorRepo) GetPublicSummary(ctx context.Context, limit, offset int) ([]domain.MonitorWithStats, error) {
+	// Use LATERAL JOIN for recent_checks to avoid correlated subquery per monitor
+	// This executes the subquery once per row in the driving table (monitors) rather than
+	// re-evaluating for each monitor in a correlated fashion.
 	query := `
-		SELECT 
+		SELECT
 			m.id, m.user_id, m.name, m.url, m.method, m.headers, m.expected_status,
 			m.interval_seconds, m.timeout_ms, m.status, m.consecutive_failures,
 			m.is_active, m.last_checked_at, m.created_at, m.updated_at,
 			stats.uptime_24h,
 			COALESCE(stats.avg_latency_24h, 0) AS avg_latency_24h,
 			COALESCE(stats.total_checks, 0) AS total_checks,
-			COALESCE(
-				(
-					SELECT json_agg(r)
-					FROM (
-						SELECT id, status_code, latency_ms, dns_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
-						FROM (
-							SELECT id, status_code, latency_ms, dns_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
-							FROM check_results
-							WHERE monitor_id = m.id
-							ORDER BY checked_at DESC
-							LIMIT 40
-						) sub
-						ORDER BY checked_at ASC
-					) r
-				), '[]'::json
-			) AS recent_checks
+			COALESCE(recent.recent_checks, '[]'::json) AS recent_checks
 		FROM monitors m
 		LEFT JOIN (
-			SELECT 
+			SELECT
 				monitor_id,
 				COUNT(*) AS total_checks,
 				ROUND(100.0 * SUM(CASE WHEN is_up THEN 1 ELSE 0 END)::numeric / COUNT(*), 2) AS uptime_24h,
@@ -437,11 +425,22 @@ func (r *MonitorRepo) GetPublicSummary(ctx context.Context) ([]domain.MonitorWit
 			WHERE checked_at >= NOW() - INTERVAL '24 hours'
 			GROUP BY monitor_id
 		) stats ON stats.monitor_id = m.id
+		LEFT JOIN LATERAL (
+			SELECT json_agg(r) AS recent_checks
+			FROM (
+				SELECT id, status_code, latency_ms, dns_ms, connect_ms, tls_ms, ttfb_ms, is_up, error_message, checked_at
+				FROM check_results
+				WHERE monitor_id = m.id
+				ORDER BY checked_at DESC
+				LIMIT 40
+			) r
+		) recent ON true
 		WHERE m.is_active = TRUE
 		ORDER BY m.name ASC
+		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := r.pool.Query(ctx, query)
+	rows, err := r.pool.Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("get public summary: %w", err)
 	}

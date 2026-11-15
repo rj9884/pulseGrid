@@ -1,4 +1,15 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+// Use different API base URLs for server-side vs client-side rendering
+// Server (SSR): can reach backend via Docker internal DNS (backend:8080)
+// Client (browser): must use host-exposed port (localhost:8080)
+const SERVER_API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://backend:8080/api/v1";
+const CLIENT_API_BASE = "/api/v1"; // Next.js rewrites proxy to backend
+
+function getApiBase(): string {
+  if (typeof window === "undefined") {
+    return SERVER_API_BASE;
+  }
+  return CLIENT_API_BASE;
+}
 
 export class ApiError extends Error {
   status: number;
@@ -45,7 +56,8 @@ export async function apiRequest<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const url = endpoint.startsWith("http") ? endpoint : `${API_BASE}${endpoint}`;
+  const apiBase = getApiBase();
+  const url = endpoint.startsWith("http") ? endpoint : `${apiBase}${endpoint}`;
 
   let res = await fetch(url, {
     ...options,
@@ -56,7 +68,7 @@ export async function apiRequest<T>(
   if (res.status === 401 && !endpoint.includes("/auth/")) {
     // Attempt token refresh
     try {
-      const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+      const refreshRes = await fetch(`${apiBase}/auth/refresh`, {
         method: "POST",
         credentials: "include",
       });

@@ -209,6 +209,6 @@ func (s *MonitorService) ListChecks(ctx context.Context, monitorID uuid.UUID, us
 	return s.checkResultRepo.ListByMonitorID(ctx, monitorID, limit, offset)
 }
 
-func (s *MonitorService) GetPublicStatus(ctx context.Context) ([]domain.MonitorWithStats, error) {
-	return s.monitorRepo.GetPublicSummary(ctx)
+func (s *MonitorService) GetPublicStatus(ctx context.Context, limit, offset int) ([]domain.MonitorWithStats, error) {
+	return s.monitorRepo.GetPublicSummary(ctx, limit, offset)
 }

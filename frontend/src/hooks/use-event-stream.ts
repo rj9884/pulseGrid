@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CheckEventSchema, type CheckEvent, type Monitor } from "@/lib/schemas";
 import { useAuth } from "@/hooks/use-auth";
 
-const SSE_URL = process.env.NEXT_PUBLIC_SSE_URL || "http://localhost:8080/api/v1/stream/events";
+const SSE_URL = "/api/v1/stream/events";
 
 interface CheckItemRecord {
   id: number;
@@ -27,15 +27,11 @@ export function useEventStream() {
   const [isConnected, setIsConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState<CheckEvent | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectAttemptRef = useRef(0);
-  const maxReconnectAttempts = 10;
-  const baseReconnectDelay = 1000; // 1 second
-
-  // Use a ref to hold the connect function to avoid circular dependency
-  const connectRef = useRef<() => void | undefined>(undefined);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const connect = useCallback(() => {
     if (!token) return;
+    if (eventSourceRef.current) return; // Already connected
 
     const url = new URL(SSE_URL);
     url.searchParams.set("token", token);
@@ -45,7 +41,6 @@ export function useEventStream() {
 
     es.addEventListener("connected", () => {
       setIsConnected(true);
-      reconnectAttemptRef.current = 0; // Reset on successful connection
     });
 
     es.addEventListener("check_completed", (event: MessageEvent) => {
@@ -122,34 +117,41 @@ export function useEventStream() {
 
     es.onerror = () => {
       setIsConnected(false);
-      // Attempt reconnection with exponential backoff
-      if (reconnectAttemptRef.current < maxReconnectAttempts) {
-        const delay = Math.min(
-          baseReconnectDelay * Math.pow(2, reconnectAttemptRef.current),
-          30000 // Cap at 30 seconds
-        );
-        reconnectAttemptRef.current += 1;
-        setTimeout(() => connectRef.current?.(), delay);
+      // EventSource automatically reconnects - we just track connection state
+      // If the connection is permanently lost, the browser will eventually stop retrying
+      // We can optionally schedule a manual reconnect after a long delay as fallback
+      if (!reconnectTimeoutRef.current) {
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (eventSourceRef.current && eventSourceRef.current.readyState === EventSource.CLOSED) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+            reconnectTimeoutRef.current = null;
+            connect(); // Reconnect
+          } else {
+            reconnectTimeoutRef.current = null;
+          }
+        }, 30000); // 30s fallback - EventSource native reconnection should handle most cases
       }
     };
   }, [queryClient, token]);
 
-  // Update ref after connect is defined (useEffect to avoid render-time ref update)
   useEffect(() => {
-    connectRef.current = connect;
-  }, [connect]);
-
-  useEffect(() => {
-    connect();
+    if (token) {
+      connect();
+    }
 
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
       setIsConnected(false);
     };
-  }, [connect]);
+  }, [connect, token]);
 
   return { isConnected, lastEvent };
 }

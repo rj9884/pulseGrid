@@ -3,6 +3,12 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# Build-time env for Next.js rewrites (must match runtime backend service name)
+ARG NEXT_PUBLIC_API_URL=http://backend:8080/api/v1
+ARG NEXT_PUBLIC_SSE_URL=http://backend:8080/api/v1/stream/events
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_SSE_URL=${NEXT_PUBLIC_SSE_URL}
+
 # Copy package files for dependency caching
 COPY frontend/package*.json ./
 RUN npm ci
